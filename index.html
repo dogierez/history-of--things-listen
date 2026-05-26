@@ -71,7 +71,7 @@
         .status-badge.completed { background: var(--success); }
 
         .audio-container { width: 100%; margin-bottom: 20px; text-align: center; }
-        audio { width: 100%; }
+        audio { width: 100%; outline: none; }
 
         .question-text { font-size: 18px; font-weight: bold; margin-bottom: 15px; }
 
@@ -132,7 +132,7 @@
             <button onclick="showMenu()" style="margin-bottom: 15px; padding: 5px 10px; cursor: pointer; border-radius: 5px; border: 1px solid #bdc3c7;">← Back to Menu</button>
             
             <div class="audio-container" id="listening-phase">
-                <p style="text-align: left;"><strong>1. Listen carefully to the audio:</strong></p>
+                <p style="text-align: left;" id="listening-instructions"><strong>1. Listen carefully to the audio (You can only listen once!):</strong></p>
                 <audio id="lesson-audio" controls controlsList="nodownload"></audio>
                 <button id="start-quiz-btn" class="action-btn" style="margin-top: 25px;" onclick="startQuiz()">I'm Ready, Start Quiz</button>
             </div>
@@ -154,6 +154,11 @@
             <p id="score-text" style="font-size: 18px; font-weight: bold;">You scored 15 out of 15</p>
             <p style="color: #7f8c8d; margin-bottom: 20px;">Your score has been saved to your phone.</p>
             
+            <div style="background: var(--light); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <p style="margin-top: 0; font-weight: bold;">Review Audio (Listen freely):</p>
+                <audio id="review-audio" controls controlsList="nodownload" style="width: 100%;"></audio>
+            </div>
+
             <button id="read-transcript-btn" class="action-btn" style="background-color: var(--purple);" onclick="toggleTranscript()">Read the Text</button>
             <div id="transcript-area" class="hidden"></div>
 
@@ -707,6 +712,7 @@
     const quizContainer = document.getElementById('quiz-container');
 
     const audioPlayer = document.getElementById('lesson-audio');
+    const reviewAudioPlayer = document.getElementById('review-audio');
     const questionText = document.getElementById('question-text');
     const optionsArea = document.getElementById('options-area');
     const feedback = document.getElementById('feedback');
@@ -715,6 +721,12 @@
     const appTitle = document.getElementById('app-title');
     const transcriptArea = document.getElementById('transcript-area');
     const readTranscriptBtn = document.getElementById('read-transcript-btn');
+
+    // Remove controls when the audio finishes to enforce "listen once"
+    audioPlayer.onended = function() {
+        audioPlayer.removeAttribute("controls");
+        document.getElementById('listening-instructions').innerHTML = "<strong>Audio finished. Please start the quiz.</strong>";
+    };
 
     function initMenu() {
         lessonList.innerHTML = '';
@@ -737,20 +749,28 @@
         score = 0;
         
         appTitle.innerText = currentLesson.title;
+        
+        // Reset Audio Player settings for listening phase
         audioPlayer.src = currentLesson.audioUrl;
+        audioPlayer.setAttribute("controls", "controls");
+        document.getElementById('listening-instructions').innerHTML = "<strong>1. Listen carefully to the audio (You can only listen once!):</strong>";
         
         menuScreen.classList.add('hidden');
         resultsScreen.classList.add('hidden');
         quizScreen.classList.remove('hidden');
 
-        // Reset to listening phase
+        listeningPhase.classList.remove('hidden');
         quizContainer.classList.add('hidden');
         startQuizBtn.classList.remove('hidden');
         transcriptArea.classList.add('hidden');
     }
 
     function startQuiz() {
-        startQuizBtn.classList.add('hidden');
+        audioPlayer.pause(); // Just in case they didn't finish and clicked start
+        
+        // Hide the entire listening phase completely to prevent access during the quiz
+        listeningPhase.classList.add('hidden'); 
+        
         quizContainer.classList.remove('hidden');
         loadQuestion();
     }
@@ -804,9 +824,10 @@
     function finishLesson() {
         quizScreen.classList.add('hidden');
         resultsScreen.classList.remove('hidden');
-        audioPlayer.pause(); 
         
-        // Reset transcript button for the next view
+        // Load audio into the review player so they can listen freely
+        reviewAudioPlayer.src = currentLesson.audioUrl;
+        
         transcriptArea.classList.add('hidden');
         readTranscriptBtn.innerText = "Read the Text";
 
@@ -832,6 +853,7 @@
 
     function showMenu() {
         audioPlayer.pause();
+        reviewAudioPlayer.pause();
         quizScreen.classList.add('hidden');
         resultsScreen.classList.add('hidden');
         menuScreen.classList.remove('hidden');
