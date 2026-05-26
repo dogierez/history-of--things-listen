@@ -1,1 +1,835 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English History Listening Quizzes</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+            --bg: #f7f9fa;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--dark);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .app-container {
+            background: white;
+            max-width: 600px;
+            width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            overflow: hidden;
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background-color: var(--primary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 { margin: 0; font-size: 24px; }
+
+        .content {
+            padding: 20px;
+            flex-grow: 1;
+        }
+
+        /* Menu Styles */
+        .menu-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .menu-item {
+            background: var(--light);
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .menu-item:hover {
+            transform: scale(1.02);
+            background: #dfe6e9;
+        }
+
+        .status-badge {
+            font-size: 14px;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 20px;
+            background: #bdc3c7;
+            color: white;
+        }
+
+        .status-badge.completed {
+            background: var(--success);
+        }
+
+        /* Quiz Styles */
+        .audio-container {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        
+        audio { width: 100%; }
+
+        .question-text {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .option-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: var(--light);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: left;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .option-btn:hover:not(:disabled) { background: #dfe6e9; }
+        .option-btn.correct { background: var(--success); color: white; border-color: var(--success); }
+        .option-btn.incorrect { background: var(--danger); color: white; border-color: var(--danger); }
+        .option-btn:disabled { cursor: not-allowed; opacity: 0.8; }
+
+        .feedback {
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+            min-height: 24px;
+        }
+
+        .action-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px;
+            width: 100%;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .action-btn:hover { background: #2980b9; }
+
+        /* Results Styles */
+        .results-container {
+            text-align: center;
+        }
+        .circle-score {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            font-weight: bold;
+            margin: 20px auto;
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">
+        <h1 id="app-title">Listening Quizzes</h1>
+    </div>
+    
+    <div class="content">
+        <div id="menu-screen">
+            <h2>Select a Lesson</h2>
+            <ul class="menu-list" id="lesson-list"></ul>
+        </div>
+
+        <div id="quiz-screen" class="hidden">
+            <button onclick="showMenu()" style="margin-bottom: 15px; padding: 5px 10px; cursor: pointer;">← Back to Menu</button>
+            <div class="audio-container">
+                <p><strong>1. Listen to the audio:</strong></p>
+                <audio id="lesson-audio" controls controlsList="nodownload"></audio>
+            </div>
+            <hr style="border: 1px solid #ecf0f1; margin-bottom: 20px;">
+            <div id="quiz-container">
+                <p><strong>2. Answer the questions:</strong> <span style="float:right;" id="progress-text">1/15</span></p>
+                <div class="question-text" id="question-text">Loading question...</div>
+                <div id="options-area"></div>
+                <div class="feedback" id="feedback"></div>
+                <button id="next-btn" class="action-btn hidden" onclick="nextQuestion()">Next Question</button>
+            </div>
+        </div>
+
+        <div id="results-screen" class="hidden results-container">
+            <h2>Lesson Completed!</h2>
+            <div class="circle-score" id="final-percentage">100%</div>
+            <p id="score-text" style="font-size: 18px; font-weight: bold;">You scored 15 out of 15</p>
+            <p style="color: #7f8c8d; margin-bottom: 30px;">Your score has been saved to your phone.</p>
+            <button class="action-btn" onclick="showMenu()">Return to Main Menu</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const baseUrl = "https://raw.githubusercontent.com/dogierez/history-of--things-listen/main/";
+
+    const lessonsData = [
+        {
+            id: 1, title: "1. Air Conditioner", audioUrl: baseUrl + "01_air_conditioner.mp3",
+            questions: [
+                { q: "When did Willis Carrier build his machine?", options: ["A) 1802", "B) 1902", "C) 1920"], answer: 1 },
+                { q: "Where did Willis Carrier work?", options: ["A) At a movie theater", "B) At a school", "C) At a printing company"], answer: 2 },
+                { q: "What did the hot, wet air do to the paper?", options: ["A) It made the paper dry and hard.", "B) It changed the paper's shape and ruined the colors.", "C) It burned the paper."], answer: 1 },
+                { q: "What did Carrier actually want to control with his machine?", options: ["A) The moisture (water) in the air", "B) The hot temperature", "C) The speed of the printing machines"], answer: 0 },
+                { q: "Which places bought the machines first to make people happy in the summer?", options: ["A) Hospitals", "B) Schools", "C) Movie theaters"], answer: 2 },
+                { q: "True / False: Willis Carrier wanted to invent a machine to keep humans cool.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: The summer air in New York was hot and wet.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: The machine made the room feel cold by surprise.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Before this invention, schools always stayed open in the summer.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: The air conditioner helped big cities grow in very hot places.", options: ["True", "False"], answer: 0 },
+                { q: "The text says Carrier built a 'clever' machine. What does 'clever' mean here?", options: ["A) Smart and useful", "B) Big and heavy", "C) Cheap and broken"], answer: 0 },
+                { q: "The machine controlled the 'moisture.' What is moisture?", options: ["A) Wetness in the air", "B) Loud noise", "C) A bad smell"], answer: 0 },
+                { q: "People watched films 'comfortably.' This means they felt...", options: ["A) tired and angry.", "B) relaxed and good.", "C) hot and sick."], answer: 1 },
+                { q: "Why did schools and businesses close in the summer before 1902?", options: ["A) Because people wanted to go on holiday.", "B) Because it was too hot to stay inside the buildings and work.", "C) Because they did not have any paper to use."], answer: 1 },
+                { q: "What is the best summary of this story?", options: ["A) Going to the movie theater is a fun summer activity.", "B) Willis Carrier made a mistake and ruined a printing company.", "C) An invention made for printing paper accidentally changed how we live in hot weather."], answer: 2 }
+            ]
+        },
+        {
+            id: 2, title: "2. Blue Jeans", audioUrl: baseUrl + "02_blue_jeans.mp3",
+            questions: [
+                { q: "Why did miners go to California in the 1870s?", options: ["A) To buy jeans", "B) To dig for gold", "C) To watch movies"], answer: 1 },
+                { q: "What problem did the miners have?", options: ["A) Their shoes were too heavy.", "B) Their pants ripped open constantly.", "C) They did not have enough money for food."], answer: 1 },
+                { q: "What did Jacob Davis add to the pants to make them stronger?", options: ["A) Extra pockets", "B) Small copper rivets (metal pieces)", "C) Soft cotton"], answer: 1 },
+                { q: "Who did Jacob Davis write a letter to for help?", options: ["A) Levi Strauss", "B) A movie star", "C) A cowboy"], answer: 0 },
+                { q: "When did teenagers and movie stars start wearing jeans?", options: ["A) In the 1870s", "B) In the 1950s", "C) In 1873"], answer: 1 },
+                { q: "True / False: Blue jeans began as clothes for rich businessmen.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: Jacob Davis did not have enough money to patent his invention alone.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: The first pair of Levi's jeans was created in 1873.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Cowboys never wore blue jeans.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: Today, people of all ages wear jeans.", options: ["True", "False"], answer: 0 },
+                { q: "The miners' work was 'rough.' What does rough mean here?", options: ["A) Very easy and fun", "B) Hard and physical", "C) Quiet and slow"], answer: 1 },
+                { q: "The text says pants would 'tear.' What does tear mean?", options: ["A) To wash", "B) To rip or break", "C) To change color"], answer: 1 },
+                { q: "Jacob Davis wanted to 'patent' his invention. What does patent mean?", options: ["A) Sell it in a shop", "B) Get a legal document so no one else can copy it", "C) Wash it in a machine"], answer: 1 },
+                { q: "Why are jeans still so popular today?", options: ["A) Because they are made of gold.", "B) Because they are strong, comfortable, and look good.", "C) Because you can only wear them to work."], answer: 1 },
+                { q: "What is the main idea of this story?", options: ["A) A simple idea for hard workers became the most popular pants in the world.", "B) California is a good place to find gold.", "C) Movie stars always invent new clothes."], answer: 0 }
+            ]
+        },
+        {
+            id: 3, title: "3. Eyeglasses", audioUrl: baseUrl + "03_eyeglasses.mp3",
+            questions: [
+                { q: "When were the first eyeglasses made?", options: ["A) In the 1700s", "B) In the late 13th century", "C) Ten years ago"], answer: 1 },
+                { q: "Where did the story of eyeglasses begin?", options: ["A) Italy", "B) France", "C) America"], answer: 0 },
+                { q: "What did early glassmakers discover?", options: ["A) Glass makes letters look blurry.", "B) Specially shaped glass makes small letters look big and sharp.", "C) Glass breaks easily in the cold."], answer: 1 },
+                { q: "How did people wear the very first eyeglasses?", options: ["A) They glued them to their faces.", "B) They held them or balanced them on their noses.", "C) They wore them on a hat."], answer: 1 },
+                { q: "When were side arms (the parts that sit over your ears) invented?", options: ["A) In the 13th century", "B) In the 1700s", "C) In the 1900s"], answer: 1 },
+                { q: "True / False: Hundreds of years ago, if your eyes became weak, you could not read easily.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: The first eyeglasses had arms that went over your ears.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: Eyeglasses allowed older teachers and doctors to keep working.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Early eyeglasses were made of plastic.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: Today, glasses are only used for medicine, never for fashion.", options: ["True", "False"], answer: 1 },
+                { q: "The text says everything looked 'blurry' for people with weak eyes. What does blurry mean?", options: ["A) Not clear; hard to see", "B) Very bright and colorful", "C) Cold and dark"], answer: 0 },
+                { q: "People had to 'balance' glasses carefully. What does balance mean?", options: ["A) Throw them away", "B) Keep them steady so they don't fall", "C) Clean them with water"], answer: 1 },
+                { q: "Glasses are a helpful 'tool.' What is a tool?", options: ["A) A toy for kids", "B) A place to sleep", "C) An object that helps you do a job"], answer: 2 },
+                { q: "How did eyeglasses change the world of work?", options: ["A) People had to stop working earlier in life.", "B) Experienced, older people could share their knowledge for a longer time.", "C) Only glassmakers could go to school."], answer: 1 },
+                { q: "Why do you think it took so long to invent the side arms for glasses?", options: ["A) Glass was too heavy.", "B) It took time for people to experiment and improve the design.", "C) People liked holding them with their hands."], answer: 1 }
+            ]
+        },
+        {
+            id: 4, title: "4. Fried Potatoes", audioUrl: baseUrl + "04_fried_potatoes.mp3",
+            questions: [
+                { q: "Which two countries argue about who invented fried potatoes?", options: ["A) England and America", "B) France and Belgium", "C) Germany and Italy"], answer: 1 },
+                { q: "When do the people of Belgium say they invented fries?", options: ["A) In the 1900s", "B) During World War I", "C) In the late 1600s"], answer: 2 },
+                { q: "Why did the poor villagers cut potatoes into tiny fish shapes?", options: ["A) Because the river froze and they could not catch real fish.", "B) Because potatoes taste like fish.", "C) Because the king told them to."], answer: 0 },
+                { q: "Who arrived in Belgium during World War I and tasted the fries?", options: ["A) French chefs", "B) American soldiers", "C) Belgian fishermen"], answer: 1 },
+                { q: "Why were they named 'French fries'?", options: ["A) Because they were invented in Paris.", "B) Because the Belgian army spoke French.", "C) Because they are eaten with French bread."], answer: 1 },
+                { q: "True / False: People only call them 'french fries' and never any other name.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: The Belgian story says poor villagers originally fried tiny fish for dinner.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: The river froze during the summer.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: The soldiers thought the hot potatoes were delicious.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Today, you can find fried potatoes in almost every country.", options: ["True", "False"], answer: 0 },
+                { q: "The two countries have a friendly 'argument.' What is an argument here?", options: ["A) A big physical fight", "B) A disagreement where both sides think they are right", "C) A big party"], answer: 1 },
+                { q: "The villagers used to 'catch' tiny fish. What does catch mean?", options: ["A) Cook", "B) Capture or get", "C) Paint"], answer: 1 },
+                { q: "They are cooked in hot oil and 'served' with salt. What does served mean?", options: ["A) Given to someone to eat", "B) Thrown in the trash", "C) Hidden away"], answer: 0 },
+                { q: "Why did the villagers use potatoes instead of another vegetable?", options: ["A) Potatoes were probably cheap and easy to find in the winter.", "B) Potatoes are blue.", "C) Potatoes swim in the river."], answer: 0 },
+                { q: "What does this story tell us about how food names are created?", options: ["A) Names are always 100% scientifically correct.", "B) Names can happen because of simple misunderstandings or language mistakes.", "C) Kings always name the food."], answer: 1 }
+            ]
+        },
+        {
+            id: 5, title: "5. Hair Dryer", audioUrl: baseUrl + "05_hair_dryer.mp3",
+            questions: [
+                { q: "Who invented the first hair salon drying machine?", options: ["A) Alexandre Godefroy", "B) Willis Carrier", "C) Thomas Edison"], answer: 0 },
+                { q: "In what year did the first giant hair dryer machine appear?", options: ["A) 1890", "B) 1920", "C) 2000"], answer: 0 },
+                { q: "What did the first giant machine use to blow hot air?", options: ["A) A plastic fan", "B) A gas stove", "C) A water hose"], answer: 1 },
+                { q: "What did vacuum cleaner companies tell women to do in the early 1900s?", options: ["A) Wash their hair with the vacuum.", "B) Connect a hose to the exhaust end of the vacuum to dry their hair.", "C) Put their head inside the vacuum."], answer: 1 },
+                { q: "When were the first handheld, portable hair dryers invented?", options: ["A) In the 1890s", "B) In the 1920s", "C) In the 1950s"], answer: 1 },
+                { q: "True / False: The very first hair dryers were small and easy to carry.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: You could not move at all while using Alexandre Godefroy's machine.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Early vacuum cleaners blew out warm air from the back.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: The first handheld hair dryers in the 1920s were made of light plastic.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: The metal handheld hair dryers were dangerous if they got wet.", options: ["True", "False"], answer: 0 },
+                { q: "Getting out of the shower with wet hair can be 'annoying.' What does annoying mean?", options: ["A) Making you feel slightly angry or uncomfortable", "B) Making you feel very happy", "C) Making you feel sleepy"], answer: 0 },
+                { q: "The machine had a giant 'pipe.' What is a pipe?", options: ["A) A type of hat", "B) A long tube that air or water goes through", "C) A small battery"], answer: 1 },
+                { q: "The 1920s hair dryers were 'portable.' What does portable mean?", options: ["A) Heavy and stuck to the floor", "B) Easy to carry and move around", "C) Very loud"], answer: 1 },
+                { q: "Why are modern hair dryers made of plastic instead of heavy metal?", options: ["A) Because plastic looks prettier.", "B) Because plastic is lighter and safer to use near water.", "C) Because metal is too cold."], answer: 1 },
+                { q: "What do the early vacuum cleaners teach us about inventions?", options: ["A) People can find clever new uses for machines that already exist.", "B) Vacuum cleaners are only for cleaning floors.", "C) Advertisements are always wrong."], answer: 0 }
+            ]
+        },
+        {
+            id: 6, title: "6. Hamburger", audioUrl: baseUrl + "06_hamburger.mp3",
+            questions: [
+                { q: "Where does the word 'hamburger' come from?", options: ["A) Hamburg, Germany", "B) New York, America", "C) Paris, France"], answer: 0 },
+                { q: "What was 'Hamburg steak' in the 1800s?", options: ["A) A piece of bread with cheese", "B) A seasoned piece of minced beef served on a plate", "C) A fast-food restaurant"], answer: 1 },
+                { q: "Who brought the Hamburg steak to America?", options: ["A) German immigrants", "B) American tourists", "C) French chefs"], answer: 0 },
+                { q: "Where did cooks decide to put the meat between two slices of bread?", options: ["A) In a fancy restaurant", "B) At large American fairs", "C) On a ship"], answer: 1 },
+                { q: "Around what year did the modern hamburger start?", options: ["A) 1800", "B) 1900", "C) 1950"], answer: 1 },
+                { q: "True / False: The modern hamburger with a bun is an American classic.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Hamburg steak originally had bread around it in Germany.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: Workers at fairs needed a way to eat lunch while walking.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Putting meat in bread meant you still needed a plate and fork.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: The hamburger changed the way millions of people eat on the go.", options: ["True", "False"], answer: 0 },
+                { q: "The meat was 'seasoned.' What does seasoned mean?", options: ["A) Cooked in the winter", "B) Mixed with salt, pepper, and spices for flavor", "C) Burned black"], answer: 1 },
+                { q: "The text mentions 'minced' beef. What is minced meat?", options: ["A) Meat cut into tiny pieces or ground up", "B) A huge whole piece of meat", "C) Frozen meat"], answer: 0 },
+                { q: "Cooks decided to 'squash' the steak between bread. What does squash mean?", options: ["A) To throw away", "B) To gently wash", "C) To press or push down flat"], answer: 2 },
+                { q: "Why is eating with one hand important at a large fair?", options: ["A) Because the other hand is broken.", "B) So you can walk around, carry other things, and not need a table.", "C) Because plates are too heavy."], answer: 1 },
+                { q: "How did the hamburger become the 'ultimate fast food'?", options: ["A) Because it is easy to hold, fast to make, and you can eat it while moving.", "B) Because it is made of ham.", "C) Because it is only served in Germany."], answer: 0 }
+            ]
+        },
+        {
+            id: 7, title: "7. Helicopter", audioUrl: baseUrl + "07_helicopter.mp3",
+            questions: [
+                { q: "How is a helicopter different from an airplane?", options: ["A) It needs a long runway.", "B) It can take off straight up and hover.", "C) It does not have an engine."], answer: 1 },
+                { q: "Which famous artist drew a design for an 'aerial screw' 500 years ago?", options: ["A) Leonardo da Vinci", "B) Igor Sikorsky", "C) Willis Carrier"], answer: 0 },
+                { q: "What dangerous problem did early helicopters have?", options: ["A) The blades were too heavy to lift.", "B) The cabin would spin rapidly in the opposite direction of the blades.", "C) They flew too fast."], answer: 1 },
+                { q: "Who solved the spinning problem in 1939?", options: ["A) The Wright brothers", "B) Igor Sikorsky", "C) Leonardo da Vinci"], answer: 1 },
+                { q: "How was the spinning problem solved?", options: ["A) By adding a tiny vertical rotor to the back of the tail.", "B) By making the main blades smaller.", "C) By using a jet engine."], answer: 0 },
+                { q: "True / False: An airplane can hover in one spot like an insect.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: Inventors tried to build machines with spinning blades for hundreds of years.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: The early spinning cabin problem caused many crashes.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: The small tail rotor pushes against the air to keep the cabin steady.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Helicopters need a long runway to land at a hospital.", options: ["True", "False"], answer: 1 },
+                { q: "A helicopter can 'hover' in one spot. What does hover mean?", options: ["A) To crash into the ground", "B) To stay in the air without moving forward or backward", "C) To fly faster than sound"], answer: 1 },
+                { q: "The cabin would spin 'rapidly.' What does rapidly mean?", options: ["A) Very slowly", "B) Very quietly", "C) Very quickly"], answer: 2 },
+                { q: "Helicopters are used in 'emergencies.' What is an emergency?", options: ["A) A serious and dangerous situation that needs fast action", "B) A fun party with friends", "C) A normal day at school"], answer: 0 },
+                { q: "Why are helicopters better than airplanes for mountain rescues?", options: ["A) They are warmer inside.", "B) They can land in small spaces without needing a flat runway.", "C) They carry more passengers than airplanes."], answer: 1 },
+                { q: "Why was the tail rotor such an important invention?", options: ["A) It made helicopters look cooler.", "B) It made the helicopter safe to fly by stopping the wild spinning.", "C) It made the helicopter completely silent."], answer: 1 }
+            ]
+        },
+        {
+            id: 8, title: "8. Lighter", audioUrl: baseUrl + "08_lighter.mp3",
+            questions: [
+                { q: "Which was invented first: the mechanical lighter or the friction match?", options: ["A) The mechanical lighter", "B) The friction match", "C) They were invented on the same day"], answer: 0 },
+                { q: "Who invented 'Döbereiner's Lamp' in 1823?", options: ["A) George Blaisdell", "B) Johann Wolfgang Döbereiner", "C) Thomas Edison"], answer: 1 },
+                { q: "How did Döbereiner's Lamp create a flame?", options: ["A) By rubbing two sticks together.", "B) By a chemical reaction that created flammable gas hitting metal.", "C) By using electricity."], answer: 1 },
+                { q: "Who invented the famous Zippo lighter in the 1930s?", options: ["A) Johann Wolfgang Döbereiner", "B) George Blaisdell", "C) John Walker"], answer: 1 },
+                { q: "What did the Zippo lighter have to protect the flame from the wind?", options: ["A) A glass jar", "B) A small metal chimney", "C) A plastic cover"], answer: 1 },
+                { q: "True / False: Most people think matches were invented before lighters.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Döbereiner's Lamp was small and fit in a pocket easily.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: The first lighter looked like a piece of laboratory equipment.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: George Blaisdell wanted a lighter that the wind could not blow out.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Today, lighters are big and complex chemistry experiments.", options: ["True", "False"], answer: 1 },
+                { q: "The lighter was a 'device.' What is a device?", options: ["A) A piece of clothing", "B) A machine or tool made for a special purpose", "C) A type of animal"], answer: 1 },
+                { q: "The gas was 'flammable.' What does flammable mean?", options: ["A) It can catch fire easily.", "B) It turns into water.", "C) It smells good."], answer: 0 },
+                { q: "Modern lighters are 'cheap.' What does cheap mean?", options: ["A) Costing a lot of money", "B) Costing very little money", "C) Heavy"], answer: 1 },
+                { q: "Why was Döbereiner's Lamp not a good tool for everyday people to carry?", options: ["A) It was dangerous, large, and made of glass.", "B) It was too small and easy to lose.", "C) It did not create fire."], answer: 0 },
+                { q: "How did lighters change from 1823 to today?", options: ["A) They got bigger and more expensive.", "B) They went from large, dangerous science tools to small, safe pocket items.", "C) They stopped using fire completely."], answer: 1 }
+            ]
+        },
+        {
+            id: 9, title: "9. Light Bulb", audioUrl: baseUrl + "09_light_bulb.mp3",
+            questions: [
+                { q: "Who is famous for inventing the light bulb in 1879?", options: ["A) Thomas Edison", "B) Percy Spencer", "C) Alexander Graham Bell"], answer: 0 },
+                { q: "What was the problem with light bulbs before Edison's invention?", options: ["A) They were too big.", "B) They burned out after just a few minutes.", "C) They were too expensive."], answer: 1 },
+                { q: "What is the tiny wire inside the bulb called?", options: ["A) The switch", "B) The glass", "C) The filament"], answer: 2 },
+                { q: "How many different materials did Edison and his team test?", options: ["A) Over one hundred", "B) Over six thousand", "C) Ten"], answer: 1 },
+                { q: "Which material finally worked perfectly for the light bulb?", options: ["A) Hair from a man’s beard", "B) Thread", "C) A piece of carbonized bamboo"], answer: 2 },
+                { q: "True / False: Thomas Edison was the very first person to ever build a light bulb.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: Edison wanted to make a bulb that stayed bright for days.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: The team tested strange things like plants and hair.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: The successful bamboo piece broke after five minutes.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: Edison said his mistakes were just ways that did not work.", options: ["True", "False"], answer: 0 },
+                { q: "Other bulbs 'burned out' quickly. What does burn out mean?", options: ["A) Start a big fire", "B) Stop working because the part inside is broken or finished", "C) Turn a different color"], answer: 1 },
+                { q: "Edison and his team 'tested' materials. What does tested mean?", options: ["A) Tried something to see if it works", "B) Threw something away", "C) Bought something from a shop"], answer: 0 },
+                { q: "The story shows that 'failures' are steps to success. What is a failure?", options: ["A) Winning a game", "B) An attempt that is not successful", "C) A smart person"], answer: 1 },
+                { q: "What is the most important lesson from Thomas Edison’s work style?", options: ["A) If you fail once, you should stop.", "B) Hard work, patience, and not giving up will bring success.", "C) Bamboo is the only useful plant."], answer: 1 },
+                { q: "Why was it important for the bulb to stay bright for hours?", options: ["A) So people could use them reliably in their homes and cities at night.", "B) So the bulbs would explode.", "C) So they could be used during the day."], answer: 0 }
+            ]
+        },
+        {
+            id: 10, title: "10. Matches", audioUrl: baseUrl + "10_matches.mp3",
+            questions: [
+                { q: "Before matches, how did people make a fire?", options: ["A) By using a microwave", "B) By rubbing sticks together or striking rocks", "C) By calling the fire department"], answer: 1 },
+                { q: "Who accidentally invented the match in 1826?", options: ["A) Thomas Edison", "B) John Walker", "C) George Crum"], answer: 1 },
+                { q: "What was John Walker doing when he discovered the match?", options: ["A) Cooking dinner", "B) Mixing chemicals with a wooden stick in his lab", "C) Cleaning his stone floor"], answer: 1 },
+                { q: "How did the stick catch fire?", options: ["A) He put it in the oven.", "B) He scraped the chemical tip across the stone floor.", "C) He dropped it in water."], answer: 1 },
+                { q: "What do we call the safer matches created later?", options: ["A) Safety matches", "B) Magic matches", "C) Danger matches"], answer: 0 },
+                { q: "True / False: Making fire the old way took a long time.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: John Walker planned to invent a tool to make fire.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: The friction on the stone floor created a bright flame.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: The very first early matches were perfectly safe in your pocket.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: Safety matches only light up when struck against a special strip on the box.", options: ["True", "False"], answer: 0 },
+                { q: "He noticed a dried 'lump' of chemicals. What is a lump?", options: ["A) A straight line", "B) A small, solid piece of something without a clear shape", "C) A hole"], answer: 1 },
+                { q: "He wanted to 'scrape' the tip. What does scrape mean?", options: ["A) To push hard against a rough surface to pull something off", "B) To paint with a brush", "C) To look at closely"], answer: 0 },
+                { q: "Early matches could 'ignite' randomly. What does ignite mean?", options: ["A) Catch on fire", "B) Freeze", "C) Disappear"], answer: 0 },
+                { q: "Why was the invention of the match so important for human history?", options: ["A) It made making fire fast, easy, and portable for everyone.", "B) It gave people something to chew on.", "C) It stopped fires from happening."], answer: 0 },
+                { q: "Why did scientists need to invent the 'safety match'?", options: ["A) Because the old matches were too expensive.", "B) Because the early matches were dangerous and could start fires in people's pockets.", "C) Because the early matches did not work at all."], answer: 1 }
+            ]
+        },
+        {
+            id: 11, title: "11. Microwave", audioUrl: baseUrl + "11_microwave.mp3",
+            questions: [
+                { q: "What was Percy Spencer building for the military in 1945?", options: ["A) Helicopters", "B) Radar equipment", "C) Submarines"], answer: 1 },
+                { q: "What kind of energy does a radar tube produce?", options: ["A) Sound waves", "B) Invisible energy waves", "C) Ocean waves"], answer: 1 },
+                { q: "What happened to the chocolate bar in Percy Spencer's pocket?", options: ["A) It froze solid.", "B) It turned into gold.", "C) It completely melted into a sticky mess."], answer: 2 },
+                { q: "What did Spencer place in front of the machine to test it again?", options: ["A) A glass of water", "B) Corn kernels", "C) A slice of pizza"], answer: 1 },
+                { q: "What did he build to trap the waves and cook food safely?", options: ["A) A metal box", "B) A glass jar", "C) A wooden house"], answer: 0 },
+                { q: "True / False: The microwave was invented slowly on purpose.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: Percy Spencer was an engineer.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Spencer got very angry when his chocolate melted.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: The corn kernels instantly popped into popcorn.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: The first microwave oven was built to trap radar waves.", options: ["True", "False"], answer: 0 },
+                { q: "Spencer felt a strange 'sensation' in his pocket. What is a sensation?", options: ["A) A physical feeling", "B) A fast song", "C) A small animal"], answer: 0 },
+                { q: "His chocolate became a 'sticky' mess. What does sticky mean?", options: ["A) Hard like a rock", "B) Like glue; holding onto things you touch", "C) Very clean"], answer: 1 },
+                { q: "Spencer was 'curious.' What does curious mean?", options: ["A) Wanting to know or learn something", "B) Very tired", "C) Angry and sad"], answer: 0 },
+                { q: "What does Percy Spencer's reaction to the melted chocolate teach us?", options: ["A) Good scientists get mad when things go wrong.", "B) A curious mind can turn a simple accident into a world-changing invention.", "C) You should never eat chocolate at work."], answer: 1 },
+                { q: "Why do you think Spencer put the radar waves inside a metal box?", options: ["A) Because metal looks nice in the kitchen.", "B) To keep the waves safely inside and focus them on the food.", "C) To stop the food from smelling."], answer: 1 }
+            ]
+        },
+        {
+            id: 12, title: "12. Planes", audioUrl: baseUrl + "12_planes.mp3",
+            questions: [
+                { q: "What was the job of Orville and Wilbur Wright before they built planes?", options: ["A) They were doctors.", "B) They repaired bicycles.", "C) They were pilots."], answer: 1 },
+                { q: "What did the Wright brothers study to learn how to fly?", options: ["A) How birds fly", "B) How fish swim", "C) How clouds move"], answer: 0 },
+                { q: "What date did their historic first flight happen?", options: ["A) December 17, 1903", "B) January 1, 1900", "C) July 4, 1950"], answer: 0 },
+                { q: "What was the name of their wooden aircraft?", options: ["A) The Eagle", "B) The Flyer", "C) The Rocket"], answer: 1 },
+                { q: "How long did the very first flight last?", options: ["A) Twelve hours", "B) Twelve minutes", "C) Twelve seconds"], answer: 2 },
+                { q: "True / False: The Wright brothers built giant kites to test the wind.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Wilbur Wright was the one who flew the plane on the first flight.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: The first flight traveled a very long distance.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: Their flight proved a machine could fly using its own engine.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Forty-four years later, planes were flying faster than the speed of sound.", options: ["True", "False"], answer: 0 },
+                { q: "The brothers 'repaired' bicycles. What does repaired mean?", options: ["A) Fixed things that were broken", "B) Painted things blue", "C) Rode things fast"], answer: 0 },
+                { q: "Orville 'launched' into the air. What does launched mean?", options: ["A) Fell down", "B) Started moving up into the sky", "C) Stopped quickly"], answer: 1 },
+                { q: "Aviation grew faster than other technology. What is 'aviation'?", options: ["A) The science of building and flying aircraft", "B) The science of building cars", "C) The science of cooking food"], answer: 0 },
+                { q: "Why was knowing about bicycles helpful for inventing airplanes?", options: ["A) Both machines need balance, steering, and light frames.", "B) Both machines use wings to move.", "C) Bicycles and planes look exactly the same."], answer: 0 },
+                { q: "Even though the first flight was only 12 seconds, why was it historic?", options: ["A) Because they went very high into space.", "B) Because it was the first time humans controlled a heavy machine in the air with engine power.", "C) Because the plane carried a hundred people."], answer: 1 }
+            ]
+        },
+        {
+            id: 13, title: "13. Pizza", audioUrl: baseUrl + "13_pizza.mp3",
+            questions: [
+                { q: "Where did the modern story of pizza truly begin?", options: ["A) New York, America", "B) Paris, France", "C) Naples, Italy"], answer: 2 },
+                { q: "Who used to eat simple flatbreads long ago?", options: ["A) Kings and Queens", "B) Poor workers who needed a quick meal", "C) Wealthy businessmen"], answer: 1 },
+                { q: "Who visited Naples in 1889?", options: ["A) King Umberto and Queen Margherita", "B) The President of America", "C) Thomas Edison"], answer: 0 },
+                { q: "Who was the chef that wanted to make a special pizza for the Queen?", options: ["A) George Crum", "B) Raffaele Esposito", "C) Leonardo da Vinci"], answer: 1 },
+                { q: "What colors did the three toppings match?", options: ["A) The French flag", "B) The Italian flag", "C) The American flag"], answer: 1 },
+                { q: "True / False: The Queen wanted to eat fancy French food in Naples.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: The three simple toppings were tomatoes, cheese, and basil.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: The Queen hated the pizza the chef made.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: The chef named the pizza 'Margherita' in the Queen's honor.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Italian immigrants helped make pizza popular around the world.", options: ["True", "False"], answer: 0 },
+                { q: "Flatbreads had simple 'toppings.' What is a topping?", options: ["A) Food placed on top of another food for flavor", "B) A type of hat for a chef", "C) A drink served with food"], answer: 0 },
+                { q: "The chef made the pizza in her 'honor.' What does honor mean here?", options: ["A) To make someone angry", "B) To show respect and admiration for someone", "C) To steal from someone"], answer: 1 },
+                { q: "Pizza became a global 'phenomenon.' What is a phenomenon here?", options: ["A) A huge, popular success everywhere", "B) A secret recipe", "C) A strange disease"], answer: 0 },
+                { q: "Why did Raffaele Esposito use red, white, and green toppings?", options: ["A) They were the only foods left in the kitchen.", "B) He wanted to show pride in his country by matching the Italian flag.", "C) The Queen was allergic to other colors."], answer: 1 },
+                { q: "How did pizza change from a 'poor worker's food' to a loved dish?", options: ["A) By adding a lot of meat.", "B) A royal Queen liked it, and immigrants shared the recipe with the world.", "C) By making it very expensive."], answer: 1 }
+            ]
+        },
+        {
+            id: 14, title: "14. Potato Chips", audioUrl: baseUrl + "14_potato_chips.mp3",
+            questions: [
+                { q: "In what year did this story take place?", options: ["A) 1853", "B) 1903", "C) 2000"], answer: 0 },
+                { q: "What was George Crum's job?", options: ["A) He was a waiter.", "B) He was a chef in New York.", "C) He was a hotel manager."], answer: 1 },
+                { q: "What did the wealthy customer complain about?", options: ["A) The potatoes were too cold.", "B) The potatoes were too thick, soft, and needed salt.", "C) The potatoes were too spicy."], answer: 1 },
+                { q: "How did Chef Crum try to teach the customer a lesson?", options: ["A) He refused to cook for him.", "B) He sliced the potatoes paper-thin, fried them hard, and covered them in salt.", "C) He threw the food on the floor."], answer: 1 },
+                { q: "What did the customer say when he ate the hard, salty chips?", options: ["A) 'These are terrible!'", "B) 'These are amazing!'", "C) 'I want my money back!'"], answer: 1 },
+                { q: "True / False: The potato chip was invented because a chef was very happy.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: The customer rejected the french fries two times.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: George Crum thought the customer would hate the thin, hard potatoes.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: The customer refused to eat the crispy potato chips.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: Crispy potato chips became one of the most popular snacks in the world.", options: ["True", "False"], answer: 0 },
+                { q: "The customer 'complained.' What does complained mean?", options: ["A) Said they were unhappy about something", "B) Said thank you", "C) Left a big tip"], answer: 0 },
+                { q: "The customer 'rejected' the second batch. What does rejected mean?", options: ["A) Ate it very fast", "B) Said no and sent it back", "C) Asked for more"], answer: 1 },
+                { q: "Chef Crum became 'frustrated.' What does frustrated mean?", options: ["A) Feeling annoyed or angry because you cannot fix a problem", "B) Feeling relaxed and happy", "C) Feeling hungry"], answer: 0 },
+                { q: "Why did George Crum's 'punishment' for the customer fail?", options: ["A) Because the customer accidentally loved the new taste and texture.", "B) Because the potatoes burned in the fire.", "C) Because the customer called the police."], answer: 0 },
+                { q: "What does this story show us about human taste?", options: ["A) People only like soft foods.", "B) Sometimes people enjoy foods that are totally different from normal rules.", "C) Nobody likes salty food."], answer: 1 }
+            ]
+        },
+        {
+            id: 15, title: "15. Refrigerator", audioUrl: baseUrl + "15_refrigerator.mp3",
+            questions: [
+                { q: "How did people keep food fresh long ago?", options: ["A) They put it in the oven.", "B) They cut blocks of real ice from frozen lakes.", "C) They covered it in sugar."], answer: 1 },
+                { q: "Who showed the first way to make artificial cooling in 1748?", options: ["A) William Cullen", "B) Jacob Perkins", "C) Willis Carrier"], answer: 0 },
+                { q: "Who built the first real cooling machine for homes in 1834?", options: ["A) Thomas Edison", "B) Jacob Perkins", "C) George Crum"], answer: 1 },
+                { q: "What does a refrigerator actually do to keep things cold?", options: ["A) It creates cold air from nowhere.", "B) It traps warm air from the food and pushes it out.", "C) It puts ice on the food."], answer: 1 },
+                { q: "How does the back of a refrigerator usually feel?", options: ["A) Freezing cold", "B) Warm", "C) Wet"], answer: 1 },
+                { q: "True / False: Getting ice from a frozen lake in the winter was easy work.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: William Cullen built the first machine for homes.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: A refrigerator acts a bit like a vacuum cleaner for heat.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: A special liquid inside the fridge helps trap the warm air.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Refrigerators completely changed how the world eats.", options: ["True", "False"], answer: 0 },
+                { q: "People wanted to keep food 'fresh.' What does fresh mean here?", options: ["A) Hot and ready to eat", "B) Clean, new, and not ruined", "C) Covered in salt"], answer: 1 },
+                { q: "William Cullen made 'artificial' cooling. What is artificial?", options: ["A) Made by humans, not natural", "B) Very cold", "C) Extremely expensive"], answer: 0 },
+                { q: "The liquid 'traps' the warm air. What does trap mean?", options: ["A) Lets it fly away", "B) Catches it and holds it", "C) Paints it a new color"], answer: 1 },
+                { q: "Why is it important that a refrigerator pushes the warm air out?", options: ["A) Because the warm air needs to heat the kitchen.", "B) Because taking the heat away is the only way to leave the cold air behind.", "C) Because the machine needs air to breathe."], answer: 1 },
+                { q: "How did the refrigerator change everyday family life?", options: ["A) Families could keep milk and meat safe for days without hunting for ice.", "B) Families stopped eating food entirely.", "C) Families had to move to cold countries."], answer: 0 }
+            ]
+        },
+        {
+            id: 16, title: "16. Soap", audioUrl: baseUrl + "16_soap.mp3",
+            questions: [
+                { q: "According to the old story, what did ancient people sacrifice animals on?", options: ["A) Tables made of glass", "B) Altars made of wood ash", "C) Large iron beds"], answer: 1 },
+                { q: "What mixed together when it rained?", options: ["A) Water and salt", "B) Melted animal fat and wood ash", "C) Mud and rocks"], answer: 1 },
+                { q: "Where did the mixture wash down to?", options: ["A) Into the river clay", "B) Into the ocean", "C) Into a deep cave"], answer: 0 },
+                { q: "Who noticed that the strange clay was amazing?", options: ["A) Scientists", "B) Women washing clothes in the river", "C) Hunters"], answer: 1 },
+                { q: "What was early soap used for?", options: ["A) Washing hair and face", "B) Cleaning clothes or animal skins", "C) Brushing teeth"], answer: 1 },
+                { q: "True / False: Soap was invented by modern scientists in a laboratory.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: The women in the river knew the exact science behind the soap.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: The strange clay made clothes much cleaner and easier to wash.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Early soap smelled wonderful and was very cheap.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: Today, soap is the easiest way to protect yourself from germs.", options: ["True", "False"], answer: 0 },
+                { q: "Ancient people used to 'sacrifice' animals. What does sacrifice mean?", options: ["A) To keep as a pet", "B) To kill as an offering to a god in a religious ceremony", "C) To feed and wash them"], answer: 1 },
+                { q: "The fat and ash formed a 'mixture.' What is a mixture?", options: ["A) Different things combined together", "B) A single pure chemical", "C) A type of heavy rock"], answer: 0 },
+                { q: "Soap protects you from 'germs.' What are germs?", options: ["A) Tiny bugs you can easily see", "B) Microscopic living things that cause disease", "C) Small pieces of dirt"], answer: 1 },
+                { q: "Why didn't people use early soap on their skin?", options: ["A) It was too heavy, harsh, and smelled terrible.", "B) They preferred taking baths in milk.", "C) The soap was invisible."], answer: 0 },
+                { q: "What does this story tell us about ancient discoveries?", options: ["A) Everything was discovered by kings.", "B) Ordinary people doing chores often accidentally discovered useful science.", "C) Ancient people did not care about being clean."], answer: 1 }
+            ]
+        },
+        {
+            id: 17, title: "17. Submarines", audioUrl: baseUrl + "17_submarines.mp3",
+            questions: [
+                { q: "Who built the first working submarine in 1620?", options: ["A) Cornelius Drebbel", "B) Igor Sikorsky", "C) Leonardo da Vinci"], answer: 0 },
+                { q: "What was the first submarine made of?", options: ["A) Steel and glass", "B) A wooden rowboat covered in tight leather", "C) Plastic and rubber"], answer: 1 },
+                { q: "How did the first submarine move through the river?", options: ["A) It had a small engine.", "B) Twelve rowers sat inside and used oars.", "C) It was pulled by fish."], answer: 1 },
+                { q: "What was the name of the tiny submarine during the American Revolutionary War?", options: ["A) The Egg", "B) The Turtle", "C) The Shark"], answer: 1 },
+                { q: "How do modern submarines stay underwater for months?", options: ["A) They use solar power.", "B) They use nuclear power.", "C) They use large batteries."], answer: 1 },
+                { q: "True / False: A submarine can dive thousands of meters into the sea.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Cornelius Drebbel was a French inventor.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: The Turtle was a giant submarine that held 50 people.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: The pilot of The Turtle had to turn pedals and cranks by hand.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Modern submarines have to come up for air every day.", options: ["True", "False"], answer: 1 },
+                { q: "The boat was covered in 'tight' leather. What does tight mean here?", options: ["A) Loose and falling off", "B) Fitting closely to stop water from coming in", "C) Very bright and colorful"], answer: 1 },
+                { q: "Submarines can stay 'submerged.' What does submerged mean?", options: ["A) Flying high in the sky", "B) Floating on top of the water", "C) Completely under the water"], answer: 2 },
+                { q: "Modern submarines are high-tech 'structures.' What is a structure?", options: ["A) Something that has been built or put together", "B) A natural rock", "C) A type of ocean plant"], answer: 0 },
+                { q: "Why was leather a good choice for the first submarine?", options: ["A) It smells good underwater.", "B) Thick leather can be oiled to become waterproof and wrap around wood.", "C) It was the only material allowed in London."], answer: 1 },
+                { q: "What is the biggest difference between The Turtle and a modern nuclear submarine?", options: ["A) The Turtle used human muscle power, but modern ones use advanced machine power.", "B) The Turtle went deeper than modern submarines.", "C) The Turtle was much faster."], answer: 0 }
+            ]
+        },
+        {
+            id: 18, title: "18. The Button", audioUrl: baseUrl + "18_the_button.mp3",
+            questions: [
+                { q: "Five thousand years ago, what were buttons used for?", options: ["A) Holding pants up", "B) Decoration, like jewelry", "C) Buying food"], answer: 1 },
+                { q: "What materials were ancient buttons made of?", options: ["A) Plastic and glass", "B) Shells, bones, and round stones", "C) Wood and cotton"], answer: 1 },
+                { q: "Before buttonholes, how did people keep their clothes from falling off?", options: ["A) Metal pins, strings, or belts", "B) Zippers", "C) Glue"], answer: 0 },
+                { q: "Where did someone invent the first buttonhole in the 13th century?", options: ["A) France", "B) Germany", "C) Italy"], answer: 1 },
+                { q: "What did rich people cover their clothes in?", options: ["A) Buttons made of gold and silver", "B) Feathers", "C) Plastic buttons"], answer: 0 },
+                { q: "True / False: Ancient people used buttons to keep their clothes warm and tight.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: The buttonhole was a brilliant and simple idea.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: A buttonhole is just a small slit cut into the fabric.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Buttons allowed people to wear clothes that locked out the cold wind.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Today, buttons are still mostly made of heavy gold.", options: ["True", "False"], answer: 1 },
+                { q: "Buttons were used for 'decoration.' What is a decoration?", options: ["A) Something used to make things look beautiful", "B) A tool for cutting", "C) A medical instrument"], answer: 0 },
+                { q: "They cut a small 'slit' into the fabric. What is a slit?", options: ["A) A large round hole", "B) A long, narrow cut or opening", "C) A knot"], answer: 1 },
+                { q: "People could wear 'tight' clothes. What does tight mean?", options: ["A) Very loose and baggy", "B) Fitting closely to the body", "C) Brightly colored"], answer: 1 },
+                { q: "Why was the buttonhole considered 'magical technology' at the time?", options: ["A) It changed a useless decoration into a tool that kept people warm and comfortable.", "B) It glowed in the dark.", "C) It made the clothes disappear."], answer: 0 },
+                { q: "Why do we use plastic buttons today instead of gold?", options: ["A) Gold is too ugly.", "B) Plastic is cheap, light, and easy to make in large numbers.", "C) Plastic was invented in ancient Rome."], answer: 1 }
+            ]
+        },
+        {
+            id: 19, title: "19. The Internet", audioUrl: baseUrl + "19_the_internet.mp3",
+            questions: [
+                { q: "When did the internet project begin?", options: ["A) 1969", "B) 1989", "C) 2000"], answer: 0 },
+                { q: "What was the secret military project called?", options: ["A) THE WEB", "B) ARPANET", "C) LOGIN"], answer: 1 },
+                { q: "Why did scientists want to connect computers?", options: ["A) To play video games", "B) To share information if phone lines stopped working", "C) To watch movies"], answer: 1 },
+                { q: "What word were the engineers trying to send in the very first message?", options: ["A) HELLO", "B) LOGIN", "C) START"], answer: 1 },
+                { q: "Who invented the World Wide Web twenty years later?", options: ["A) Tim Berners-Lee", "B) Thomas Edison", "C) Bill Gates"], answer: 0 },
+                { q: "True / False: The internet started as a project in Europe.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: The scientists connected computers at different universities.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: The first time they typed 'LOGIN,' the entire system worked perfectly.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: The very first internet message was just 'LO.'", options: ["True", "False"], answer: 0 },
+                { q: "True / False: The World Wide Web made it easy for regular people to open websites.", options: ["True", "False"], answer: 0 },
+                { q: "It was a 'secret' military project. What does secret mean?", options: ["A) Famous and known by everyone", "B) Hidden and not known by other people", "C) Very boring"], answer: 1 },
+                { q: "The system 'crashed.' What does crashed mean for a computer?", options: ["A) It suddenly stopped working completely.", "B) It fell off a desk and broke physically.", "C) It moved very fast."], answer: 0 },
+                { q: "Billions of devices are 'connected.' What does connected mean?", options: ["A) Broken apart", "B) Joined together so they can share things", "C) Turned off"], answer: 1 },
+                { q: "Why was the first message failing actually a good thing for science?", options: ["A) Because it made the scientists give up.", "B) It showed that the connection existed, and taught them how to fix the bugs.", "C) It proved computers are useless."], answer: 1 },
+                { q: "What is the difference between ARPANET and the World Wide Web?", options: ["A) ARPANET was just for a few scientists; the Web made it visual and easy for everyone.", "B) ARPANET was faster than the Web.", "C) They are exactly the same thing."], answer: 0 }
+            ]
+        },
+        {
+            id: 20, title: "20. The Zipper", audioUrl: baseUrl + "20_the_zipper.mp3",
+            questions: [
+                { q: "What did Whitcomb Judson invent in 1893?", options: ["A) The buttonhole", "B) A 'clasp locker'", "C) A velcro strap"], answer: 1 },
+                { q: "What did Judson want to fasten faster?", options: ["A) His jacket", "B) His high boots", "C) His tent"], answer: 1 },
+                { q: "What was the problem with Judson's invention?", options: ["A) It was too sharp.", "B) It jammed constantly and popped open.", "C) It melted in the sun."], answer: 1 },
+                { q: "Who fixed the problem twenty years later?", options: ["A) Gideon Sundback", "B) Whitcomb Judson", "C) Willis Carrier"], answer: 0 },
+                { q: "How did the engineer fix the fastener?", options: ["A) He made the metal teeth smaller and used a sliding piece.", "B) He changed the metal to plastic.", "C) He added buttons to it."], answer: 0 },
+                { q: "True / False: The first zipper was perfect from the very beginning.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: At first, companies did not want to buy Gideon Sundback's invention.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: The United States military put the fastener on soldiers' boots during World War I.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: The name 'zipper' was chosen because of the sound it makes.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Only a few zippers are made every year today.", options: ["True", "False"], answer: 1 },
+                { q: "Judson wanted to 'fasten' his boots. What does fasten mean?", options: ["A) To clean", "B) To close or join securely", "C) To walk fast"], answer: 1 },
+                { q: "The invention 'jammed' constantly. What does jammed mean?", options: ["A) Got stuck and could not move", "B) Tasted like fruit jelly", "C) Made a loud musical noise"], answer: 0 },
+                { q: "Companies 'manufacture' billions of zippers. What does manufacture mean?", options: ["A) To throw away in the trash", "B) To make things in large numbers using machines", "C) To wear every day"], answer: 1 },
+                { q: "Why did the military using the zipper help make it popular?", options: ["A) Because the military is very fashionable.", "B) It proved to regular companies that the zipper was strong, useful, and reliable.", "C) Because the military gave them away for free."], answer: 1 },
+                { q: "Why was Gideon Sundback successful when Whitcomb Judson failed?", options: ["A) Sundback improved the design by understanding that smaller teeth work smoother.", "B) Sundback had more money.", "C) Sundback stole Judson's exact idea."], answer: 0 }
+            ]
+        },
+        {
+            id: 21, title: "21. Toilet Paper", audioUrl: baseUrl + "21_toilet_paper.mp3",
+            questions: [
+                { q: "What did people use in public bathrooms in ancient Rome?", options: ["A) Soft cotton", "B) A stick with a sea sponge attached", "C) Newspaper"], answer: 1 },
+                { q: "What did the sponge soak in?", options: ["A) Sweet perfume", "B) A bucket of saltwater", "C) Warm milk"], answer: 1 },
+                { q: "What did people use in other parts of the world?", options: ["A) Leaves, moss, coconut shells, or corn cobs", "B) Smooth stones", "C) Small birds"], answer: 0 },
+                { q: "What did people use in the 1800s when it became popular and free?", options: ["A) Old clothes", "B) Old newspapers hung on a nail", "C) Books"], answer: 1 },
+                { q: "Who invented the first packet of modern toilet paper in 1857?", options: ["A) George Crum", "B) Joseph Gayetty", "C) John Walker"], answer: 1 },
+                { q: "True / False: In ancient Rome, everyone shared the exact same sponge.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Toilet paper has always been soft and clean throughout history.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: Joseph Gayetty treated his paper with aloe vera to be soft.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Gayetty was embarrassed and hid his name from the paper.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: Today, toilet paper is considered a basic necessity.", options: ["True", "False"], answer: 0 },
+                { q: "They used a 'sponge.' What is a sponge?", options: ["A) A hard rock", "B) A soft material full of holes that holds water", "C) A wooden brush"], answer: 1 },
+                { q: "The paper was 'mass-produced.' What does mass-produced mean?", options: ["A) Made in very large amounts in a factory", "B) Made by hand, one by one", "C) Not produced at all"], answer: 0 },
+                { q: "Toilet paper is a basic 'necessity.' What is a necessity?", options: ["A) A luxury you don't really need", "B) Something you must have to live a normal life", "C) A delicious food"], answer: 1 },
+                { q: "Why did the Romans use saltwater in the bucket?", options: ["A) To make the sponge smell like the beach.", "B) Because salt helps kill germs and clean the sponge slightly.", "C) Because they were out of fresh water."], answer: 1 },
+                { q: "Why did Joseph Gayetty print his name on the toilet paper?", options: ["A) He was very proud of his healthy, soft invention.", "B) It was a mistake by the printer.", "C) He wanted people to send him letters."], answer: 0 }
+            ]
+        },
+        {
+            id: 22, title: "22. Toothpaste", audioUrl: baseUrl + "22_toothpaste.mp3",
+            questions: [
+                { q: "Who invented the earliest toothpaste five thousand years ago?", options: ["A) The Romans", "B) The Ancient Egyptians", "C) The Americans"], answer: 1 },
+                { q: "What strange things did the Egyptians put in their tooth powder?", options: ["A) Crushed ox hooves, ashes, and burnt eggshells", "B) Salt, pepper, and sugar", "C) Grass and leaves"], answer: 0 },
+                { q: "How did the Egyptians apply the powder to their teeth?", options: ["A) With a plastic toothbrush", "B) With a wooden spoon", "C) They rubbed it on with their fingers"], answer: 2 },
+                { q: "What did the Romans add to make their teeth shine?", options: ["A) Lemon juice", "B) Crushed bones and shells", "C) Gold dust"], answer: 1 },
+                { q: "Who put toothpaste into a flexible metal tube in 1892?", options: ["A) George Washington", "B) Washington Sheffield", "C) Levi Strauss"], answer: 1 },
+                { q: "True / False: Ancient toothpaste tasted exactly like sweet mint.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: The early tooth powders were rough and could hurt your gums.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: The Egyptians used soft plastic tubes for their toothpaste.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: Soap and mint were added in the 1800s to make the taste better.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: The flexible metal tube made brushing clean and easy for everyone.", options: ["True", "False"], answer: 0 },
+                { q: "They mixed 'crushed' ox hooves. What does crushed mean?", options: ["A) Painted bright colors", "B) Broken or pressed into tiny pieces or powder", "C) Washed carefully"], answer: 1 },
+                { q: "They scrubbed away food 'particles.' What are particles?", options: ["A) Very small pieces of something", "B) Large chunks of meat", "C) Types of drinks"], answer: 0 },
+                { q: "The tube was 'flexible.' What does flexible mean?", options: ["A) Hard like a diamond", "B) Easy to bend without breaking", "C) Invisible"], answer: 1 },
+                { q: "Why did early people put rough things like ashes and rock in their toothpaste?", options: ["A) Because they liked eating rocks.", "B) The rough pieces acted like sandpaper to scratch the dirt off their teeth.", "C) It made their breath smell amazing."], answer: 1 },
+                { q: "Why was putting the paste in a tube so important?", options: ["A) It kept the paste wet, clean, and easy to share without using dirty fingers.", "B) It stopped the toothpaste from exploding.", "C) It was a fun toy for children."], answer: 0 }
+            ]
+        },
+        {
+            id: 23, title: "23. Umbrella", audioUrl: baseUrl + "23_umbrella.mp3",
+            questions: [
+                { q: "For thousands of years, what were umbrellas used for?", options: ["A) Protection from the snow", "B) Protection from the sun", "C) Protection from the rain"], answer: 1 },
+                { q: "What does the Latin word for umbrella mean?", options: ["A) Water", "B) Shadow", "C) Circle"], answer: 1 },
+                { q: "In ancient Egypt and China, who used umbrellas?", options: ["A) Poor farmers", "B) Kings and queens", "C) Soldiers"], answer: 1 },
+                { q: "In the 1700s, what did people in London do if a man carried an umbrella?", options: ["A) They clapped for him.", "B) They gave him money.", "C) They laughed at him."], answer: 2 },
+                { q: "Who was the brave man who carried an umbrella every day for thirty years?", options: ["A) Jonas Hanway", "B) Thomas Edison", "C) Willis Carrier"], answer: 0 },
+                { q: "True / False: Having a big umbrella in ancient times showed you were a poor person.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: In the 1700s in London, people thought umbrellas were only for women.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: People thought men should just walk in the rain and get wet.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: People kept laughing at Jonas Hanway forever.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: When people saw Hanway stayed dry, everyone wanted an umbrella.", options: ["True", "False"], answer: 0 },
+                { q: "Umbrellas were used as a 'sunshade.' What is a sunshade?", options: ["A) A hot blanket", "B) Something that blocks the sun to keep you cool", "C) A dark pair of glasses"], answer: 1 },
+                { q: "An umbrella showed you were 'wealthy.' What does wealthy mean?", options: ["A) Having a lot of money; rich", "B) Being very smart", "C) Being extremely tired"], answer: 0 },
+                { q: "Jonas Hanway was 'brave.' What does brave mean?", options: ["A) Scared of the rain", "B) Willing to do something difficult even if people laugh at you", "C) Very good at math"], answer: 1 },
+                { q: "Why did ancient kings want to be in the 'shadow'?", options: ["A) Because it was cold in Egypt.", "B) Pale skin without sunburn showed they did not have to work outside in the hot fields.", "C) Because they liked the dark."], answer: 1 },
+                { q: "What does Jonas Hanway's story teach us about society?", options: ["A) New ideas often seem silly at first, but people change when they see the idea works.", "B) You should never use an umbrella in London.", "C) It is better to get wet than be laughed at."], answer: 0 }
+            ]
+        },
+        {
+            id: 24, title: "24. Vacuum Cleaner", audioUrl: baseUrl + "24_vacuum_cleaner.mp3",
+            questions: [
+                { q: "What did Hubert Cecil Booth see in the early 1900s?", options: ["A) A machine that sucked dust in.", "B) A machine that blew air to push dust away.", "C) A robot cleaning the floor."], answer: 1 },
+                { q: "What did Booth think the machine should do instead?", options: ["A) Suck the dust into a container.", "B) Wash the floor with water.", "C) Sweep the floor with a brush."], answer: 0 },
+                { q: "What did Booth put over his mouth to test his idea?", options: ["A) A plastic bag", "B) A handkerchief", "C) A heavy blanket"], answer: 1 },
+                { q: "How big was Booth's first real vacuum cleaner?", options: ["A) It fit in his hand.", "B) It was the size of a book.", "C) It was so giant it had to be pulled by horses."], answer: 2 },
+                { q: "How did the giant vacuum clean the rugs inside the house?", options: ["A) Workers pushed the machine into the living room.", "B) Workers ran giant hoses through the windows.", "C) The horses walked into the house."], answer: 1 },
+                { q: "True / False: Booth tested his idea by laying on the floor and sucking in air.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: The handkerchief caught all the dust, proving his idea worked.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: The first vacuum cleaner was very quiet.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: The first vacuum looked like a giant toy on a wagon.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Today, we have tiny robot vacuums that clean by themselves.", options: ["True", "False"], answer: 0 },
+                { q: "Booth wanted to suck dust into a 'container.' What is a container?", options: ["A) A box or bag used to hold things", "B) A long street", "C) A horse wagon"], answer: 0 },
+                { q: "He put a 'handkerchief' over his mouth. What is a handkerchief?", options: ["A) A big winter coat", "B) A small piece of cloth used for wiping your face or nose", "C) A metal shield"], answer: 1 },
+                { q: "Workers ran giant 'hoses' through the windows. What is a hose?", options: ["A) A flexible tube used to move air or water", "B) A long piece of wood", "C) A type of ladder"], answer: 0 },
+                { q: "Why was blowing the dust away a 'bad idea'?", options: ["A) Because the dust would just land on the furniture or stay in the room.", "B) Because it used too much electricity.", "C) Because the dust disappeared too fast."], answer: 0 },
+                { q: "Why do you think the first vacuum cleaner was not very popular for normal families?", options: ["A) It was too small and easy to lose.", "B) It was massive, noisy, and required hiring a horse wagon to park outside.", "C) It ruined the carpets."], answer: 1 }
+            ]
+        },
+        {
+            id: 25, title: "25. Video Games", audioUrl: baseUrl + "25_video_games.mp3",
+            questions: [
+                { q: "Who created the very first video game in 1958?", options: ["A) Tim Berners-Lee", "B) William Higinbotham", "C) Thomas Edison"], answer: 1 },
+                { q: "What was William Higinbotham's job?", options: ["A) He was a computer programmer.", "B) He was a nuclear scientist.", "C) He owned a video arcade."], answer: 1 },
+                { q: "Why did he create the first game?", options: ["A) To make millions of dollars.", "B) To make his laboratory tours more exciting for visitors.", "C) To train soldiers."], answer: 1 },
+                { q: "What was the name of his 1958 game?", options: ["A) Pong", "B) Pac-Man", "C) Tennis for Two"], answer: 2 },
+                { q: "What game became the first successful arcade game in 1972?", options: ["A) Space Invaders", "B) Pong", "C) Tennis for Two"], answer: 1 },
+                { q: "True / False: Today's games have beautiful 3D graphics, but the first game was very simple.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: William Higinbotham used a brand new television for his game.", options: ["True", "False"], answer: 1 },
+                { q: "True / False: The game used a simple green line for the net and a glowing dot for the ball.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Players used a metal knob and a button to hit the ball back and forth.", options: ["True", "False"], answer: 0 },
+                { q: "True / False: Pong looked like a digital football match.", options: ["True", "False"], answer: 1 },
+                { q: "Games today have complex 'graphics.' What are graphics?", options: ["A) The music and sounds in the game", "B) The pictures and visual images on the screen", "C) The buttons on the controller"], answer: 1 },
+                { q: "He wanted to make tours exciting for 'visitors.' What is a visitor?", options: ["A) A person who works in the lab every day", "B) A person who goes to see a place or person for a short time", "C) A machine that cleans"], answer: 1 },
+                { q: "Pong was a successful 'arcade' game. What is an arcade?", options: ["A) A place with coin-operated game machines", "B) A school for science", "C) A restaurant"], answer: 0 },
+                { q: "Why was 'Tennis for Two' such a huge surprise for people in 1958?", options: ["A) Because computers back then were only used for serious math and military science, not for having fun.", "B) Because it had 3D graphics.", "C) Because the glowing dot was actually a real ball."], answer: 0 },
+                { q: "What do these early games prove about technology?", options: ["A) Technology should only be used for serious work.", "B) Huge global industries often start from simple, fun experiments.", "C) Computers were better in 1958 than they are today."], answer: 1 }
+            ]
+        }
+    ];
+
+    let currentLesson = null;
+    let currentQuestionIndex = 0;
+    let score = 0;
+
+    const menuScreen = document.getElementById('menu-screen');
+    const quizScreen = document.getElementById('quiz-screen');
+    const resultsScreen = document.getElementById('results-screen');
+    const lessonList = document.getElementById('lesson-list');
+    
+    const audioPlayer = document.getElementById('lesson-audio');
+    const questionText = document.getElementById('question-text');
+    const optionsArea = document.getElementById('options-area');
+    const feedback = document.getElementById('feedback');
+    const nextBtn = document.getElementById('next-btn');
+    const progressText = document.getElementById('progress-text');
+    const appTitle = document.getElementById('app-title');
+
+    function initMenu() {
+        lessonList.innerHTML = '';
+        lessonsData.forEach(lesson => {
+            const savedScore = localStorage.getItem('lessonScore_' + lesson.id);
+            let badgeHtml = '<span class="status-badge">Not Started</span>';
+            
+            if (savedScore) {
+                badgeHtml = `<span class="status-badge completed">${savedScore}%</span>`;
+            }
+
+            const li = document.createElement('li');
+            li.className = 'menu-item';
+            li.innerHTML = `<span>${lesson.title}</span> ${badgeHtml}`;
+            li.onclick = () => startLesson(lesson.id);
+            lessonList.appendChild(li);
+        });
+    }
+
+    function startLesson(id) {
+        currentLesson = lessonsData.find(l => l.id === id);
+        currentQuestionIndex = 0;
+        score = 0;
+        
+        appTitle.innerText = currentLesson.title;
+        audioPlayer.src = currentLesson.audioUrl;
+        
+        menuScreen.classList.add('hidden');
+        resultsScreen.classList.add('hidden');
+        quizScreen.classList.remove('hidden');
+
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        feedback.innerText = "";
+        nextBtn.classList.add('hidden');
+        optionsArea.innerHTML = "";
+        
+        const qData = currentLesson.questions[currentQuestionIndex];
+        questionText.innerText = qData.q;
+        progressText.innerText = `${currentQuestionIndex + 1}/${currentLesson.questions.length}`;
+
+        qData.options.forEach((optText, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = optText;
+            btn.onclick = () => selectAnswer(index, btn);
+            optionsArea.appendChild(btn);
+        });
+    }
+
+    function selectAnswer(selectedIndex, btnElement) {
+        const correctIndex = currentLesson.questions[currentQuestionIndex].answer;
+        const allButtons = optionsArea.querySelectorAll('.option-btn');
+        
+        allButtons.forEach(b => b.disabled = true);
+
+        if (selectedIndex === correctIndex) {
+            btnElement.classList.add('correct');
+            feedback.innerText = "Correct!";
+            feedback.style.color = "var(--success)";
+            score++;
+        } else {
+            btnElement.classList.add('incorrect');
+            allButtons[correctIndex].classList.add('correct');
+            feedback.innerText = "Incorrect.";
+            feedback.style.color = "var(--danger)";
+        }
+
+        nextBtn.classList.remove('hidden');
+    }
+
+    function nextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < currentLesson.questions.length) {
+            loadQuestion();
+        } else {
+            finishLesson();
+        }
+    }
+
+    function finishLesson() {
+        quizScreen.classList.add('hidden');
+        resultsScreen.classList.remove('hidden');
+        audioPlayer.pause(); 
+
+        const totalQuestions = currentLesson.questions.length;
+        const percentage = Math.round((score / totalQuestions) * 100);
+
+        document.getElementById('final-percentage').innerText = `${percentage}%`;
+        document.getElementById('score-text').innerText = `You scored ${score} out of ${totalQuestions}`;
+
+        localStorage.setItem('lessonScore_' + currentLesson.id, percentage);
+    }
+
+    function showMenu() {
+        audioPlayer.pause();
+        quizScreen.classList.add('hidden');
+        resultsScreen.classList.add('hidden');
+        menuScreen.classList.remove('hidden');
+        appTitle.innerText = "Listening Quizzes";
+        initMenu(); 
+    }
+
+    initMenu();
+</script>
+
+</body>
+</html>
