@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,6 +12,7 @@
             --dark: #2c3e50;
             --light: #ecf0f1;
             --bg: #f7f9fa;
+            --purple: #9b59b6;
         }
         
         body {
@@ -46,17 +46,9 @@
 
         .header h1 { margin: 0; font-size: 24px; }
 
-        .content {
-            padding: 20px;
-            flex-grow: 1;
-        }
+        .content { padding: 20px; flex-grow: 1; }
 
-        /* Menu Styles */
-        .menu-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
+        .menu-list { list-style: none; padding: 0; margin: 0; }
 
         .menu-item {
             background: var(--light);
@@ -70,50 +62,24 @@
             transition: transform 0.2s;
         }
 
-        .menu-item:hover {
-            transform: scale(1.02);
-            background: #dfe6e9;
-        }
+        .menu-item:hover { transform: scale(1.02); background: #dfe6e9; }
 
         .status-badge {
-            font-size: 14px;
-            font-weight: bold;
-            padding: 5px 10px;
-            border-radius: 20px;
-            background: #bdc3c7;
-            color: white;
+            font-size: 14px; font-weight: bold; padding: 5px 10px;
+            border-radius: 20px; background: #bdc3c7; color: white;
         }
+        .status-badge.completed { background: var(--success); }
 
-        .status-badge.completed {
-            background: var(--success);
-        }
-
-        /* Quiz Styles */
-        .audio-container {
-            width: 100%;
-            margin-bottom: 20px;
-        }
-        
+        .audio-container { width: 100%; margin-bottom: 20px; text-align: center; }
         audio { width: 100%; }
 
-        .question-text {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
+        .question-text { font-size: 18px; font-weight: bold; margin-bottom: 15px; }
 
         .option-btn {
-            display: block;
-            width: 100%;
-            padding: 15px;
-            margin-bottom: 10px;
-            background: var(--light);
-            border: 2px solid transparent;
-            border-radius: 8px;
-            font-size: 16px;
-            text-align: left;
-            cursor: pointer;
-            transition: 0.2s;
+            display: block; width: 100%; padding: 15px; margin-bottom: 10px;
+            background: var(--light); border: 2px solid transparent;
+            border-radius: 8px; font-size: 16px; text-align: left;
+            cursor: pointer; transition: 0.2s;
         }
 
         .option-btn:hover:not(:disabled) { background: #dfe6e9; }
@@ -121,42 +87,27 @@
         .option-btn.incorrect { background: var(--danger); color: white; border-color: var(--danger); }
         .option-btn:disabled { cursor: not-allowed; opacity: 0.8; }
 
-        .feedback {
-            font-weight: bold;
-            text-align: center;
-            margin: 15px 0;
-            min-height: 24px;
-        }
+        .feedback { font-weight: bold; text-align: center; margin: 15px 0; min-height: 24px; }
 
         .action-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 15px;
-            width: 100%;
-            border-radius: 8px;
-            font-size: 18px;
-            cursor: pointer;
-            font-weight: bold;
+            background: var(--primary); color: white; border: none;
+            padding: 15px; width: 100%; border-radius: 8px; font-size: 18px;
+            cursor: pointer; font-weight: bold; margin-bottom: 10px;
         }
         .action-btn:hover { background: #2980b9; }
 
-        /* Results Styles */
-        .results-container {
-            text-align: center;
-        }
+        .results-container { text-align: center; }
         .circle-score {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            background: var(--primary);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            font-weight: bold;
-            margin: 20px auto;
+            width: 150px; height: 150px; border-radius: 50%;
+            background: var(--primary); color: white; display: flex;
+            align-items: center; justify-content: center; font-size: 40px;
+            font-weight: bold; margin: 20px auto;
+        }
+
+        #transcript-area {
+            background: var(--light); padding: 15px; border-radius: 8px;
+            text-align: left; font-size: 15px; line-height: 1.6;
+            margin-bottom: 20px; border-left: 4px solid var(--purple);
         }
 
         .hidden { display: none !important; }
@@ -170,19 +121,24 @@
     </div>
     
     <div class="content">
+        <!-- MENU -->
         <div id="menu-screen">
             <h2>Select a Lesson</h2>
             <ul class="menu-list" id="lesson-list"></ul>
         </div>
 
+        <!-- LISTENING & QUIZ -->
         <div id="quiz-screen" class="hidden">
-            <button onclick="showMenu()" style="margin-bottom: 15px; padding: 5px 10px; cursor: pointer;">← Back to Menu</button>
-            <div class="audio-container">
-                <p><strong>1. Listen to the audio:</strong></p>
+            <button onclick="showMenu()" style="margin-bottom: 15px; padding: 5px 10px; cursor: pointer; border-radius: 5px; border: 1px solid #bdc3c7;">← Back to Menu</button>
+            
+            <div class="audio-container" id="listening-phase">
+                <p style="text-align: left;"><strong>1. Listen carefully to the audio:</strong></p>
                 <audio id="lesson-audio" controls controlsList="nodownload"></audio>
+                <button id="start-quiz-btn" class="action-btn" style="margin-top: 25px;" onclick="startQuiz()">I'm Ready, Start Quiz</button>
             </div>
-            <hr style="border: 1px solid #ecf0f1; margin-bottom: 20px;">
-            <div id="quiz-container">
+
+            <div id="quiz-container" class="hidden">
+                <hr style="border: 1px solid #ecf0f1; margin-bottom: 20px;">
                 <p><strong>2. Answer the questions:</strong> <span style="float:right;" id="progress-text">1/15</span></p>
                 <div class="question-text" id="question-text">Loading question...</div>
                 <div id="options-area"></div>
@@ -191,12 +147,17 @@
             </div>
         </div>
 
+        <!-- RESULTS -->
         <div id="results-screen" class="hidden results-container">
             <h2>Lesson Completed!</h2>
             <div class="circle-score" id="final-percentage">100%</div>
             <p id="score-text" style="font-size: 18px; font-weight: bold;">You scored 15 out of 15</p>
-            <p style="color: #7f8c8d; margin-bottom: 30px;">Your score has been saved to your phone.</p>
-            <button class="action-btn" onclick="showMenu()">Return to Main Menu</button>
+            <p style="color: #7f8c8d; margin-bottom: 20px;">Your score has been saved to your phone.</p>
+            
+            <button id="read-transcript-btn" class="action-btn" style="background-color: var(--purple);" onclick="toggleTranscript()">Read the Text</button>
+            <div id="transcript-area" class="hidden"></div>
+
+            <button class="action-btn" style="background-color: #95a5a6;" onclick="showMenu()">Return to Main Menu</button>
         </div>
     </div>
 </div>
@@ -207,6 +168,7 @@
     const lessonsData = [
         {
             id: 1, title: "1. Air Conditioner", audioUrl: baseUrl + "01_air_conditioner.mp3",
+            text: "On a hot summer day, nothing feels better than walking into a cool room. We can thank the air conditioner for that! But did you know it was not actually invented to keep humans cool? In the year 1902, a young engineer named Willis Carrier worked at a printing company in New York. The hot, wet summer air was causing a big problem. It made the printing paper swell and twist, which ruined the colors of the books. Willis Carrier built a clever machine to control the moisture in the air. To his surprise, the machine also made the room feel beautifully cold! Soon, movie theaters bought these machines so people could watch films comfortably during hot summers. Before this invention, schools and businesses often closed during the summer because it was just too hot to work. The air conditioner changed how we build houses and allowed cities to grow in very hot places around the world.",
             questions: [
                 { q: "When did Willis Carrier build his machine?", options: ["A) 1802", "B) 1902", "C) 1920"], answer: 1 },
                 { q: "Where did Willis Carrier work?", options: ["A) At a movie theater", "B) At a school", "C) At a printing company"], answer: 2 },
@@ -227,6 +189,7 @@
         },
         {
             id: 2, title: "2. Blue Jeans", audioUrl: baseUrl + "02_blue_jeans.mp3",
+            text: "Blue jeans are probably the most popular pants in the world. They are strong, comfortable, and look great. But their story began in the dirt of the American Wild West. In the 1870s, thousands of miners went to California to dig for gold. Their work was very rough, and their regular trousers ripped open constantly. A tailor named Jacob Davis wanted to help them. He had an idea to add small copper rivets—metal pieces—to the corners of the pockets so they would not tear. Jacob Davis did not have enough money to patent his invention, so he wrote a letter to Levi Strauss, a businessman who sold heavy denim fabric. Together, they created the very first pair of Levi’s jeans in 1873. At first, only laborers and cowboys wore jeans. But in the 1950s, cool movie stars started wearing them, and teenagers everywhere wanted a pair. Today, people of all ages wear jeans every single day.",
             questions: [
                 { q: "Why did miners go to California in the 1870s?", options: ["A) To buy jeans", "B) To dig for gold", "C) To watch movies"], answer: 1 },
                 { q: "What problem did the miners have?", options: ["A) Their shoes were too heavy.", "B) Their pants ripped open constantly.", "C) They did not have enough money for food."], answer: 1 },
@@ -247,6 +210,7 @@
         },
         {
             id: 3, title: "3. Eyeglasses", audioUrl: baseUrl + "03_eyeglasses.mp3",
+            text: "Think about how hard it would be to read a book or look at a computer screen if everything looked blurry. Hundreds of years ago, if your eyes became weak, you could not work or read anymore. That changed in Italy during the late 13th century. Glassmakers discovered that looking through specially shaped pieces of glass could make tiny letters look big and sharp. They connected two pieces of glass together to make the first eyeglasses. At first, people had to hold these glasses with their hands or balance them carefully on their noses. They did not have the side arms that sit over your ears today! Side arms were not invented until the 1700s. Eyeglasses completely changed the world. Suddenly, older teachers, doctors, and craftsmen could keep working, reading, and inventing for many more years. Today, glasses are both a helpful medical tool and a cool fashion accessory.",
             questions: [
                 { q: "When were the first eyeglasses made?", options: ["A) In the 1700s", "B) In the late 13th century", "C) Ten years ago"], answer: 1 },
                 { q: "Where did the story of eyeglasses begin?", options: ["A) Italy", "B) France", "C) America"], answer: 0 },
@@ -267,6 +231,7 @@
         },
         {
             id: 4, title: "4. Fried Potatoes", audioUrl: baseUrl + "04_fried_potatoes.mp3",
+            text: "Whether you call them french fries, chips, or fried potatoes, crispy golden potato strips are loved everywhere. But who actually invented them? The French and the Belgians have had a friendly argument about this for over a hundred years! The citizens of Belgium say they invented fries in the late 1600s. According to local stories, poor villagers living near a river used to catch tiny fish and fry them for dinner. One winter, the river froze completely, so they could not fish. They cut potatoes into tiny fish shapes instead and fried them! During World War I, American soldiers arrived in Belgium and tasted these delicious hot potatoes. Because the Belgian army spoke French, the soldiers named the snack 'French fries.' No matter who invented them, today they are cooked in hot oil and served with salt and ketchup in almost every country on earth.",
             questions: [
                 { q: "Which two countries argue about who invented fried potatoes?", options: ["A) England and America", "B) France and Belgium", "C) Germany and Italy"], answer: 1 },
                 { q: "When do the people of Belgium say they invented fries?", options: ["A) In the 1900s", "B) During World War I", "C) In the late 1600s"], answer: 2 },
@@ -287,6 +252,7 @@
         },
         {
             id: 5, title: "5. Hair Dryer", audioUrl: baseUrl + "05_hair_dryer.mp3",
+            text: "Getting out of the shower with wet hair can be annoying, especially in the winter. Today, we use a handy electric hair dryer. But the very first hair dryers were actually giant living room machines! In 1890, a French stylist named Alexandre Godefroy invented a large machine for his hair salon. It used a gas stove to blow hot air through a giant pipe into a hood that sat on top of a person's head. You could not move at all while using it! Later, in the early 1900s, vacuum cleaner companies noticed something funny. The exhaust end of their vacuums blew out warm air. Their advertisements actually told women to connect a hose to the back of the vacuum to dry their hair! Finally, in the 1920s, engineers invented the first handheld, portable hair dryers. They were made of heavy metal and were quite dangerous if they got wet, but they paved the way for the safe plastic hair dryers we use today.",
             questions: [
                 { q: "Who invented the first hair salon drying machine?", options: ["A) Alexandre Godefroy", "B) Willis Carrier", "C) Thomas Edison"], answer: 0 },
                 { q: "In what year did the first giant hair dryer machine appear?", options: ["A) 1890", "B) 1920", "C) 2000"], answer: 0 },
@@ -307,6 +273,7 @@
         },
         {
             id: 6, title: "6. Hamburger", audioUrl: baseUrl + "06_hamburger.mp3",
+            text: "When you visit a fast-food restaurant, you might order a delicious hamburger with lettuce and cheese. While the name sounds German, the modern hamburger is an American classic. The word hamburger comes from the city of Hamburg, Germany. In the 1800s, German immigrants traveling to America brought a popular dish called 'Hamburg steak'—which was just a seasoned piece of minced beef served on a plate. At large American fairs, workers needed a way to eat their lunch while walking around the crowded grounds. Sometime around 1900, creative cooks decided to squash the hot beef steak between two soft slices of bread. Suddenly, customers could hold their meat meal with one hand without needing a plate or a fork! This simple change turned the hamburger into the ultimate fast food, changing the way millions of people eat on the go.",
             questions: [
                 { q: "Where does the word 'hamburger' come from?", options: ["A) Hamburg, Germany", "B) New York, America", "C) Paris, France"], answer: 0 },
                 { q: "What was 'Hamburg steak' in the 1800s?", options: ["A) A piece of bread with cheese", "B) A seasoned piece of minced beef served on a plate", "C) A fast-food restaurant"], answer: 1 },
@@ -327,6 +294,7 @@
         },
         {
             id: 7, title: "7. Helicopter", audioUrl: baseUrl + "07_helicopter.mp3",
+            text: "An airplane flies fast across the sky, but it needs a long runway to land. A helicopter is special because it can take off straight up into the air and hover in one spot like an insect. For hundreds of years, inventors tried to build flying machines with spinning blades. Even the great artist Leonardo da Vinci drew a design for an 'aerial screw' five hundred years ago! However, early helicopters had a dangerous problem: when the top blades spun around, the cabin would spin rapidly in the opposite direction, causing it to crash. In 1939, an engineer named Igor Sikorsky solved this big puzzle. He added a tiny vertical rotor to the very back of the tail. This small tail rotor pushed against the air to keep the main cabin perfectly straight and steady. Thanks to his design, helicopters can land on mountain peaks, hospital roofs, and boats to save lives during emergencies.",
             questions: [
                 { q: "How is a helicopter different from an airplane?", options: ["A) It needs a long runway.", "B) It can take off straight up and hover.", "C) It does not have an engine."], answer: 1 },
                 { q: "Which famous artist drew a design for an 'aerial screw' 500 years ago?", options: ["A) Leonardo da Vinci", "B) Igor Sikorsky", "C) Willis Carrier"], answer: 0 },
@@ -347,6 +315,7 @@
         },
         {
             id: 8, title: "8. Lighter", audioUrl: baseUrl + "08_lighter.mp3",
+            text: "You might think that matches were invented first and lighters came later, but the truth is the exact opposite! The mechanical lighter was actually invented before the friction match. In 1823, a German chemist named Johann Wolfgang Döbereiner invented a device called 'Döbereiner's Lamp.' It was a large glass jar that used a chemical reaction to create a flammable gas. When you turned a valve, the gas hit a piece of platinum metal and created a flame. It was very dangerous and looked like a piece of laboratory equipment, but it worked! In the 1930s, a man named George Blaisdell invented the famous Zippo lighter. He wanted a small lighter that would not blow out in the wind. He added a little metal chimney around the flame to protect it. Today, plastic lighters are small, cheap, and can fit easily inside a pocket. They show how a big, complex chemistry experiment became a simple daily tool.",
             questions: [
                 { q: "Which was invented first: the mechanical lighter or the friction match?", options: ["A) The mechanical lighter", "B) The friction match", "C) They were invented on the same day"], answer: 0 },
                 { q: "Who invented 'Döbereiner's Lamp' in 1823?", options: ["A) George Blaisdell", "B) Johann Wolfgang Döbereiner", "C) Thomas Edison"], answer: 1 },
@@ -367,6 +336,7 @@
         },
         {
             id: 9, title: "9. Light Bulb", audioUrl: baseUrl + "09_light_bulb.mp3",
+            text: "When the sun goes down, you just flip a switch to turn on the lights. It seems so simple! But the story of the light bulb is full of hard work and thousands of mistakes. Many people think Thomas Edison invented the light bulb in 1879. The truth is, other scientists had already built bulbs, but they burned out after just a few minutes. Edison wanted to make a bulb that could stay bright for days. To do this, he needed the perfect material for the tiny wire inside the bulb, called the filament. Edison and his team tested over six thousand different materials! They tested plants, thread, and even hair from a man’s beard. Finally, they discovered that a piece of carbonized bamboo worked perfectly. It burned for more than twelve hours without breaking! Edison showed the world that failures are just steps to success. He famously said he did not fail six thousand times; he just found six thousand ways that did not work.",
             questions: [
                 { q: "Who is famous for inventing the light bulb in 1879?", options: ["A) Thomas Edison", "B) Percy Spencer", "C) Alexander Graham Bell"], answer: 0 },
                 { q: "What was the problem with light bulbs before Edison's invention?", options: ["A) They were too big.", "B) They burned out after just a few minutes.", "C) They were too expensive."], answer: 1 },
@@ -387,6 +357,7 @@
         },
         {
             id: 10, title: "10. Matches", audioUrl: baseUrl + "10_matches.mp3",
+            text: "Fire is one of the most important tools in human history, but making a fire used to take a long time. People had to rub sticks together or strike rocks to create a tiny spark. In 1826, a British chemist named John Walker was working in his laboratory. He was mixing chemicals with a wooden stick. When he pulled the stick out, he noticed a dried lump of chemicals on the tip. He wanted to clean the stick, so he scraped the tip across his stone floor. Suddenly—whoosh! The friction created a bright flame right on the end of the wood. John Walker had accidentally invented the match. At first, these early matches were dangerous because they could explode or ignite randomly in your pocket. Later, scientists created 'safety matches' that only light up when you strike them against a special strip on the side of the box.",
             questions: [
                 { q: "Before matches, how did people make a fire?", options: ["A) By using a microwave", "B) By rubbing sticks together or striking rocks", "C) By calling the fire department"], answer: 1 },
                 { q: "Who accidentally invented the match in 1826?", options: ["A) Thomas Edison", "B) John Walker", "C) George Crum"], answer: 1 },
@@ -407,6 +378,7 @@
         },
         {
             id: 11, title: "11. Microwave", audioUrl: baseUrl + "11_microwave.mp3",
+            text: "The microwave is a magical kitchen machine. It can heat up your dinner or pop popcorn in just one minute! Like many great inventions, it was discovered completely by accident. In 1945, an engineer named Percy Spencer was working at a company that built radar equipment for the military. One day, he stood in front of a working radar tube, which produces invisible energy waves. Suddenly, he felt a strange, warm sensation in his pocket. He reached inside and discovered that his chocolate bar had completely melted into a sticky mess! Percy Spencer was curious, not angry. He placed some corn kernels in front of the machine, and they instantly popped into popcorn all over the room! He realized these radar waves could cook food incredibly fast. He built a metal box to trap the waves, creating the very first microwave oven. Today, millions of kitchens have one.",
             questions: [
                 { q: "What was Percy Spencer building for the military in 1945?", options: ["A) Helicopters", "B) Radar equipment", "C) Submarines"], answer: 1 },
                 { q: "What kind of energy does a radar tube produce?", options: ["A) Sound waves", "B) Invisible energy waves", "C) Ocean waves"], answer: 1 },
@@ -427,6 +399,7 @@
         },
         {
             id: 12, title: "12. Planes", audioUrl: baseUrl + "12_planes.mp3",
+            text: "Today, we can board a giant metal plane and fly across oceans in just a few hours. This incredible journey began with two brothers who repaired bicycles for a living. Orville and Wilbur Wright loved machines. They spent years studying how birds fly and built giant kites to test the wind. On December 17, 1903, in North Carolina, Orville Wright climbed inside their wooden aircraft, called The Flyer, and launched into the air. That historic first flight lasted just twelve seconds! The plane flew a distance shorter than the length of a modern passenger jet, but it proved that a machine could fly using its own engine power. Just forty-four years later, planes were flying faster than the speed of sound! Aviation grew quicker than almost any other technology, turning our massive planet into a connected global neighborhood.",
             questions: [
                 { q: "What was the job of Orville and Wilbur Wright before they built planes?", options: ["A) They were doctors.", "B) They repaired bicycles.", "C) They were pilots."], answer: 1 },
                 { q: "What did the Wright brothers study to learn how to fly?", options: ["A) How birds fly", "B) How fish swim", "C) How clouds move"], answer: 0 },
@@ -447,6 +420,7 @@
         },
         {
             id: 13, title: "13. Pizza", audioUrl: baseUrl + "13_pizza.mp3",
+            text: "Pizza is one of the most loved foods on earth. You can find it in almost every country, but its modern story truly began in the city of Naples, Italy. Long ago, flatbreads with simple toppings were a cheap food for poor workers who needed a quick meal. Then, in 1889, King Umberto and Queen Margherita visited Naples. The Queen was tired of eating fancy French food and wanted to try the local flatbread. A chef named Raffaele Esposito wanted to make a very special pizza for the Queen. He chose three simple toppings to match the colors of the Italian flag: red tomatoes, white mozzarella cheese, and green basil leaves. The Queen absolutely loved it! The chef named the pizza 'Margherita' in her honor. Italian immigrants later brought pizza recipes to America, and it quickly exploded into a global phenomenon.",
             questions: [
                 { q: "Where did the modern story of pizza truly begin?", options: ["A) New York, America", "B) Paris, France", "C) Naples, Italy"], answer: 2 },
                 { q: "Who used to eat simple flatbreads long ago?", options: ["A) Kings and Queens", "B) Poor workers who needed a quick meal", "C) Wealthy businessmen"], answer: 1 },
@@ -467,6 +441,7 @@
         },
         {
             id: 14, title: "14. Potato Chips", audioUrl: baseUrl + "14_potato_chips.mp3",
+            text: "Have you ever opened a bag of crunchy potato chips? This delicious snack was actually invented because a chef got very angry at a difficult customer! In the year 1853, a chef named George Crum worked at a restaurant in New York. A wealthy customer ordered a plate of french fries. When the food arrived, the customer complained that the potatoes were too thick, too soft, and did not have enough salt. George Crum made a second batch, but the customer rejected them again! Chef Crum became frustrated. To teach the customer a lesson, he sliced the potatoes paper-thin, fried them until they were rock-hard, and covered them in salt. He thought the customer would hate them. Instead, the customer took a bite and yelled, 'These are amazing!' Soon, everyone wanted the crispy potato chips, and they became one of the most popular snacks in the world.",
             questions: [
                 { q: "In what year did this story take place?", options: ["A) 1853", "B) 1903", "C) 2000"], answer: 0 },
                 { q: "What was George Crum's job?", options: ["A) He was a waiter.", "B) He was a chef in New York.", "C) He was a hotel manager."], answer: 1 },
@@ -487,6 +462,7 @@
         },
         {
             id: 15, title: "15. Refrigerator", audioUrl: baseUrl + "15_refrigerator.mp3",
+            text: "Have you ever wondered how your refrigerator stays so cold? Long ago, people did not have refrigerators. To keep food fresh, they had to travel to frozen lakes in the winter. They cut giant blocks of real ice and carried them home on big boats! It was very hard work. Then, everything changed. In the year 1748, a smart scientist named William Cullen showed the world the very first way to make artificial cooling. Later, in 1834, an inventor named Jacob Perkins built the first real cooling machine that actually worked for homes. How does this machine work? It does not actually create cold. Instead, it acts like a vacuum cleaner for heat! Inside the fridge, a special liquid traps the warm air from your food. Then, the machine pushes that warm air out into your kitchen. That is why the back of a refrigerator always feels warm if you touch it! Thanks to William Cullen and Jacob Perkins, we can enjoy cold juice and fresh ice cream anytime we want. Their invention completely changed how the world eats!",
             questions: [
                 { q: "How did people keep food fresh long ago?", options: ["A) They put it in the oven.", "B) They cut blocks of real ice from frozen lakes.", "C) They covered it in sugar."], answer: 1 },
                 { q: "Who showed the first way to make artificial cooling in 1748?", options: ["A) William Cullen", "B) Jacob Perkins", "C) Willis Carrier"], answer: 0 },
@@ -507,6 +483,7 @@
         },
         {
             id: 16, title: "16. Soap", audioUrl: baseUrl + "16_soap.mp3",
+            text: "We use soap every day to wash our hands and stay healthy. It feels like a modern invention, but soap was actually discovered by accident thousands of years ago. According to an old story, ancient people used to sacrifice animals on altars made of wood ash. When it rained, the melted animal fat mixed with the wood ash. This mixture washed down the hills into the river clay. Women washing clothes in the river noticed something amazing. The strange clay made their clothes much cleaner and easier to wash! Without knowing the science, they had discovered soap. For a long time, soap was heavy, expensive, and smelled bad. People only used it to clean clothes or animal skins. It took many centuries for scientists to make gentle, nice-smelling soap bars for our skin. Today, washing your hands with soap is the easiest way to protect yourself from germs and stay healthy.",
             questions: [
                 { q: "According to the old story, what did ancient people sacrifice animals on?", options: ["A) Tables made of glass", "B) Altars made of wood ash", "C) Large iron beds"], answer: 1 },
                 { q: "What mixed together when it rained?", options: ["A) Water and salt", "B) Melted animal fat and wood ash", "C) Mud and rocks"], answer: 1 },
@@ -527,6 +504,7 @@
         },
         {
             id: 17, title: "17. Submarines", audioUrl: baseUrl + "17_submarines.mp3",
+            text: "The ocean is deep, dark, and full of mysteries. Ships sail on top of the water, but a submarine can dive thousands of meters down into the deep sea. The first working submarine was built all the way back in 1620 by a Dutch inventor named Cornelius Drebbel. It was a wooden rowboat covered in tight leather to keep the water out! Twelve rowers sat inside and used oars to move through the Thames River in London. During the American Revolutionary War, inventors built a tiny, one-man submarine shaped like a giant egg, named The Turtle. The pilot had to turn foot-pedals and hand-cranks to move it under water. Today, modern submarines are giant high-tech steel structures. They use nuclear power to stay submerged underwater for months at a time without ever coming up for air, exploring the deepest secrets of our blue planet.",
             questions: [
                 { q: "Who built the first working submarine in 1620?", options: ["A) Cornelius Drebbel", "B) Igor Sikorsky", "C) Leonardo da Vinci"], answer: 0 },
                 { q: "What was the first submarine made of?", options: ["A) Steel and glass", "B) A wooden rowboat covered in tight leather", "C) Plastic and rubber"], answer: 1 },
@@ -547,6 +525,7 @@
         },
         {
             id: 18, title: "18. The Button", audioUrl: baseUrl + "18_the_button.mp3",
+            text: "Look at your shirt or your jacket. Do you see any buttons? Buttons are everywhere today, but they were once used just for decoration, like jewelry. Ancient people used buttons made of beautiful shells, bones, and round stones five thousand years ago. They pinned them onto their clothes just to look nice. To keep their clothes from falling off, they used metal pins, strings, or belts. Then, around the 13th century, someone in Germany had a brilliant, simple idea. They cut a small slit into the fabric. This slit was the very first buttonhole! Suddenly, buttons became a magical technology. People could wear tight, warm clothes that locked out the cold wind. Buttons became so popular that rich people covered their entire outfits in buttons made of gold and silver. Today, plastic buttons are simple and cheap, but they remain one of the greatest fashion inventions in human history.",
             questions: [
                 { q: "Five thousand years ago, what were buttons used for?", options: ["A) Holding pants up", "B) Decoration, like jewelry", "C) Buying food"], answer: 1 },
                 { q: "What materials were ancient buttons made of?", options: ["A) Plastic and glass", "B) Shells, bones, and round stones", "C) Wood and cotton"], answer: 1 },
@@ -567,6 +546,7 @@
         },
         {
             id: 19, title: "19. The Internet", audioUrl: baseUrl + "19_the_internet.mp3",
+            text: "Think about your favorite online video game, video website, or website. None of them could exist without the internet. But what is the internet, and how did it start? The internet began in 1969 as a secret military project in America called ARPANET. Scientists wanted to connect computers at different universities so they could share information if phone lines stopped working. In October 1969, engineers tried to send the very first message from one computer to another university computer. They planned to type the word 'LOGIN.' They typed the letter 'L,' then the letter 'O,' and then the entire system crashed! So, the very first internet message was just 'LO.' Twenty years later, a scientist named Tim Berners-Lee invented the World Wide Web, which made it easy for regular people to open websites. Today, billions of computers, phones, and devices are connected to this giant digital web.",
             questions: [
                 { q: "When did the internet project begin?", options: ["A) 1969", "B) 1989", "C) 2000"], answer: 0 },
                 { q: "What was the secret military project called?", options: ["A) THE WEB", "B) ARPANET", "C) LOGIN"], answer: 1 },
@@ -587,6 +567,7 @@
         },
         {
             id: 20, title: "20. The Zipper", audioUrl: baseUrl + "20_the_zipper.mp3",
+            text: "Imagine trying to put on your boots or close your backpack without a zipper. It would take a long time! The zipper is a great invention, but it took a very long time to perfect. A man named Whitcomb Judson invented a 'clasp locker' in 1893. He wanted a faster way to fasten his high boots. Sadly, his invention did not work well. It jammed constantly and popped open at the wrong times! Twenty years later, a smart engineer named Gideon Sundback fixed the problem. He made the metal teeth much smaller and guided them together using a sliding piece. At first, companies did not want to buy it. Then, the United States military put this new fastener on the boots and pockets of soldiers during World War I. In 1923, a company named it the 'zipper' because of the fun zip sound it makes. Today, billions of zippers are manufactured every year around the world.",
             questions: [
                 { q: "What did Whitcomb Judson invent in 1893?", options: ["A) The buttonhole", "B) A 'clasp locker'", "C) A velcro strap"], answer: 1 },
                 { q: "What did Judson want to fasten faster?", options: ["A) His jacket", "B) His high boots", "C) His tent"], answer: 1 },
@@ -607,6 +588,7 @@
         },
         {
             id: 21, title: "21. Toilet Paper", audioUrl: baseUrl + "21_toilet_paper.mp3",
+            text: "We use toilet paper every single day, and we expect it to be soft and clean. But what did people use before this common item was mass-produced? In ancient Rome, public bathrooms had a stick with a sea sponge attached to the end, soaking in a bucket of saltwater. Everyone shared the exact same sponge! In other parts of the world, people used leaves, moss, coconut shells, or corn cobs. When newspapers became popular in the 1800s, many people just hung old newspapers on a nail in the bathroom to use for free. In 1857, an American businessman named Joseph Gayetty invented the first packet of modern toilet paper. He was very proud because his paper was treated with aloe vera to be soft. He even printed his own name on every sheet! Today, toilet paper is a basic necessity that we cannot imagine living without.",
             questions: [
                 { q: "What did people use in public bathrooms in ancient Rome?", options: ["A) Soft cotton", "B) A stick with a sea sponge attached", "C) Newspaper"], answer: 1 },
                 { q: "What did the sponge soak in?", options: ["A) Sweet perfume", "B) A bucket of saltwater", "C) Warm milk"], answer: 1 },
@@ -627,6 +609,7 @@
         },
         {
             id: 22, title: "22. Toothpaste", audioUrl: baseUrl + "22_toothpaste.mp3",
+            text: "Every morning and every night, you put toothpaste on your toothbrush to keep your teeth clean and white. Modern toothpaste tastes like sweet mint, but ancient toothpaste was very different—and a bit scary! Ancient Egyptians invented the earliest toothpaste five thousand years ago. They did not have soft tubes. Instead, they mixed crushed ox hooves, ashes, burnt eggshells, and rough volcanic rock into a powder. They rubbed this powder onto their teeth with their fingers to scrub away food particles. Later, the Romans added crushed bones and shells to make their teeth shine. For a long time, these powders tasted terrible and could actually hurt your gums. In the 1800s, soap and mint were added to make the paste taste much better. Finally, a dentist named Washington Sheffield put toothpaste into a flexible metal tube in 1892. This made brushing your teeth clean, easy, and fun for everyone.",
             questions: [
                 { q: "Who invented the earliest toothpaste five thousand years ago?", options: ["A) The Romans", "B) The Ancient Egyptians", "C) The Americans"], answer: 1 },
                 { q: "What strange things did the Egyptians put in their tooth powder?", options: ["A) Crushed ox hooves, ashes, and burnt eggshells", "B) Salt, pepper, and sugar", "C) Grass and leaves"], answer: 0 },
@@ -647,6 +630,7 @@
         },
         {
             id: 23, title: "23. Umbrella", audioUrl: baseUrl + "23_umbrella.mp3",
+            text: "Do you have an umbrella to protect you from the rain? Umbrellas have a very long history, but for thousands of years, they were used for a completely different reason: the sun! The word umbrella comes from a Latin word that means 'shadow.' Four thousand years ago, ancient kings and queens in Egypt and China used umbrellas as sunshades. Having a big umbrella showed everyone that you were a very important and wealthy person. In Europe, people did not use umbrellas for the rain until the 1700s. In fact, if a man carried an umbrella in London, people would laugh at him! They thought umbrellas were only for women and that men should just walk in the rain. Then, a brave man named Jonas Hanway carried an umbrella every single day for thirty years. People stopped laughing when they saw he stayed perfectly dry. Soon, everyone wanted one, and umbrellas became a popular tool for rainy days.",
             questions: [
                 { q: "For thousands of years, what were umbrellas used for?", options: ["A) Protection from the snow", "B) Protection from the sun", "C) Protection from the rain"], answer: 1 },
                 { q: "What does the Latin word for umbrella mean?", options: ["A) Water", "B) Shadow", "C) Circle"], answer: 1 },
@@ -667,6 +651,7 @@
         },
         {
             id: 24, title: "24. Vacuum Cleaner", audioUrl: baseUrl + "24_vacuum_cleaner.mp3",
+            text: "Have you ever helped clean your house? Today, we use a vacuum cleaner to suck up dust from the floor. But long ago, cleaning was very different. In the early 1900s, an engineer named Hubert Cecil Booth saw a machine that blew air to push dust away. He thought, 'That is a bad idea! We should suck the dust into a container instead.' To test his idea, he put a handkerchief over his own mouth, laid down on the floor, and sucked in the air. The handkerchief caught all the dust! His first real vacuum cleaner was absolutely giant. It was so big that it had to be carried on a wagon pulled by horses! Workers parked the horses outside a house and ran giant hoses through the windows to clean the rugs. It was very loud, and it looked like a giant toy. Later, smaller machines were invented for homes. Today, we even have tiny robot vacuums that clean the floor by themselves while we sleep!",
             questions: [
                 { q: "What did Hubert Cecil Booth see in the early 1900s?", options: ["A) A machine that sucked dust in.", "B) A machine that blew air to push dust away.", "C) A robot cleaning the floor."], answer: 1 },
                 { q: "What did Booth think the machine should do instead?", options: ["A) Suck the dust into a container.", "B) Wash the floor with water.", "C) Sweep the floor with a brush."], answer: 0 },
@@ -687,6 +672,7 @@
         },
         {
             id: 25, title: "25. Video Games", audioUrl: baseUrl + "25_video_games.mp3",
+            text: "Do you like playing video games on your computer or console? Today, games have beautiful 3D graphics and complex stories, but the very first video game was incredibly simple. In 1958, a nuclear scientist named William Higinbotham wanted to make his laboratory tours more exciting for visitors. He used an old computer screen meant for science charts and turned it into a game called Tennis for Two. The game showed a simple green line for the net and a bright glowing dot for the ball. Players turned a metal knob and pressed a button to hit the ball back and forth. Everyone loved it! Later, in 1972, a game called Pong became the first successful arcade game. It looked like a simple digital table tennis match. These early experiments showed the world that computers could be used for pure fun, starting a massive global industry.",
             questions: [
                 { q: "Who created the very first video game in 1958?", options: ["A) Tim Berners-Lee", "B) William Higinbotham", "C) Thomas Edison"], answer: 1 },
                 { q: "What was William Higinbotham's job?", options: ["A) He was a computer programmer.", "B) He was a nuclear scientist.", "C) He owned a video arcade."], answer: 1 },
@@ -716,6 +702,10 @@
     const resultsScreen = document.getElementById('results-screen');
     const lessonList = document.getElementById('lesson-list');
     
+    const listeningPhase = document.getElementById('listening-phase');
+    const startQuizBtn = document.getElementById('start-quiz-btn');
+    const quizContainer = document.getElementById('quiz-container');
+
     const audioPlayer = document.getElementById('lesson-audio');
     const questionText = document.getElementById('question-text');
     const optionsArea = document.getElementById('options-area');
@@ -723,16 +713,15 @@
     const nextBtn = document.getElementById('next-btn');
     const progressText = document.getElementById('progress-text');
     const appTitle = document.getElementById('app-title');
+    const transcriptArea = document.getElementById('transcript-area');
+    const readTranscriptBtn = document.getElementById('read-transcript-btn');
 
     function initMenu() {
         lessonList.innerHTML = '';
         lessonsData.forEach(lesson => {
             const savedScore = localStorage.getItem('lessonScore_' + lesson.id);
             let badgeHtml = '<span class="status-badge">Not Started</span>';
-            
-            if (savedScore) {
-                badgeHtml = `<span class="status-badge completed">${savedScore}%</span>`;
-            }
+            if (savedScore) badgeHtml = `<span class="status-badge completed">${savedScore}%</span>`;
 
             const li = document.createElement('li');
             li.className = 'menu-item';
@@ -754,6 +743,15 @@
         resultsScreen.classList.add('hidden');
         quizScreen.classList.remove('hidden');
 
+        // Reset to listening phase
+        quizContainer.classList.add('hidden');
+        startQuizBtn.classList.remove('hidden');
+        transcriptArea.classList.add('hidden');
+    }
+
+    function startQuiz() {
+        startQuizBtn.classList.add('hidden');
+        quizContainer.classList.remove('hidden');
         loadQuestion();
     }
 
@@ -778,7 +776,6 @@
     function selectAnswer(selectedIndex, btnElement) {
         const correctIndex = currentLesson.questions[currentQuestionIndex].answer;
         const allButtons = optionsArea.querySelectorAll('.option-btn');
-        
         allButtons.forEach(b => b.disabled = true);
 
         if (selectedIndex === correctIndex) {
@@ -792,7 +789,6 @@
             feedback.innerText = "Incorrect.";
             feedback.style.color = "var(--danger)";
         }
-
         nextBtn.classList.remove('hidden');
     }
 
@@ -809,6 +805,10 @@
         quizScreen.classList.add('hidden');
         resultsScreen.classList.remove('hidden');
         audioPlayer.pause(); 
+        
+        // Reset transcript button for the next view
+        transcriptArea.classList.add('hidden');
+        readTranscriptBtn.innerText = "Read the Text";
 
         const totalQuestions = currentLesson.questions.length;
         const percentage = Math.round((score / totalQuestions) * 100);
@@ -817,6 +817,17 @@
         document.getElementById('score-text').innerText = `You scored ${score} out of ${totalQuestions}`;
 
         localStorage.setItem('lessonScore_' + currentLesson.id, percentage);
+    }
+
+    function toggleTranscript() {
+        if (transcriptArea.classList.contains('hidden')) {
+            transcriptArea.innerText = currentLesson.text;
+            transcriptArea.classList.remove('hidden');
+            readTranscriptBtn.innerText = "Hide Text";
+        } else {
+            transcriptArea.classList.add('hidden');
+            readTranscriptBtn.innerText = "Read the Text";
+        }
     }
 
     function showMenu() {
